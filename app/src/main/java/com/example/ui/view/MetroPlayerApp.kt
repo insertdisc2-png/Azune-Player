@@ -4218,10 +4218,20 @@ fun SettingsPanel(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { 
-                    showPrivacyPolicyFullScreen = true 
-                }) {
-                    Text(text = "PRIVACY POLICY", color = themeAccentColor, fontWeight = FontWeight.Bold)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = {
+                        throw RuntimeException("Test Crash triggered from About Azune screen!")
+                    }) {
+                        Text(text = "CRASH TEST", color = Color(0xFFFF5252), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                    TextButton(onClick = { 
+                        showPrivacyPolicyFullScreen = true 
+                    }) {
+                        Text(text = "PRIVACY POLICY", color = themeAccentColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
                 }
             }
         )
