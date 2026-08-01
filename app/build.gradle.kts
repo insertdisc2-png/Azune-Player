@@ -64,6 +64,7 @@ android {
     buildConfig = true
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
+  base.archivesName.set("Azune")
 }
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
