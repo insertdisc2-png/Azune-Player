@@ -49,13 +49,6 @@ fun getSafeInterFontFamily(context: android.content.Context): FontFamily {
     safeInterFontFamily?.let { return it }
     
     val family = try {
-        // Verify all Inter font weights can be successfully loaded and are valid
-        androidx.core.content.res.ResourcesCompat.getFont(context, com.example.R.font.inter_light)
-        androidx.core.content.res.ResourcesCompat.getFont(context, com.example.R.font.inter_regular)
-        androidx.core.content.res.ResourcesCompat.getFont(context, com.example.R.font.inter_medium)
-        androidx.core.content.res.ResourcesCompat.getFont(context, com.example.R.font.inter_semibold)
-        androidx.core.content.res.ResourcesCompat.getFont(context, com.example.R.font.inter_bold)
-        
         FontFamily(
             androidx.compose.ui.text.font.Font(resId = com.example.R.font.inter_light, weight = FontWeight.Light),
             androidx.compose.ui.text.font.Font(resId = com.example.R.font.inter_regular, weight = FontWeight.Normal),
@@ -64,7 +57,6 @@ fun getSafeInterFontFamily(context: android.content.Context): FontFamily {
             androidx.compose.ui.text.font.Font(resId = com.example.R.font.inter_bold, weight = FontWeight.Bold)
         )
     } catch (e: Throwable) {
-        android.util.Log.e("MetroFont", "Failed to load Inter fonts from resources: ${e.message}. Falling back to system sans-serif.", e)
         FontFamily.SansSerif
     }
     
