@@ -1,0 +1,6 @@
+{
+  "name": "Azune",
+  "description": "An offline, high-fidelity audio player utilizing customizable accent layouts, personalized library groups, and an advanced synthesis engine for professional playback control.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
