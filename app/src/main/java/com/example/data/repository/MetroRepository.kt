@@ -43,7 +43,7 @@ class MetroRepository(
         ),
         Track(
             id = "synth_blue",
-            title = "Windows Blue Chill",
+            title = "Deep Blue Chill",
             artist = "Aero Wave System",
             durationMs = 180000L,
             path = "synth_blue",

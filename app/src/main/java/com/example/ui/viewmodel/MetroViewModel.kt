@@ -144,6 +144,30 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
                 playNextTrack()
             }
         }
+
+        // Observe current track and playback state to update music notification on status bar
+        viewModelScope.launch {
+            combine(_currentTrack, _isPlayingState) { track, isPlaying ->
+                Pair(track, isPlaying)
+            }.collect { (track, isPlaying) ->
+                com.example.service.MusicNotificationService.updateNotification(
+                    application.applicationContext,
+                    track,
+                    isPlaying
+                )
+            }
+        }
+
+        // Handle user control actions from MusicNotificationService
+        com.example.service.MusicNotificationService.onNotificationAction = { action ->
+            when (action) {
+                com.example.service.MusicNotificationService.ACTION_PLAY,
+                com.example.service.MusicNotificationService.ACTION_PAUSE -> togglePlayPause()
+                com.example.service.MusicNotificationService.ACTION_NEXT -> playNextTrack()
+                com.example.service.MusicNotificationService.ACTION_PREVIOUS -> playPreviousTrack()
+                com.example.service.MusicNotificationService.ACTION_STOP -> stopPlayback()
+            }
+        }
     }
 
     fun loadLocalLibrary() {
@@ -281,6 +305,7 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
         _currentTrack.value = null
         _isPlayingState.value = false
         playerEngine.stop()
+        com.example.service.MusicNotificationService.stopNotification(getApplication())
     }
 
     fun playNextTrack() {

@@ -47,7 +47,7 @@ data class UserSettingsEntity(
     val appBackgroundImage: String = "",     // Uri or path of background image
     val appBackgroundBlur: Float = 4f,      // Blur radius (1f to 25f)
     val appBackgroundOpacity: Float = 0.3f,   // Opacity/clearness intensity (0f to 1f)
-    val previewLyrics: Boolean = true,
+    val previewLyrics: Boolean = false,
     val lyricsFontFamily: String = "Inter",
     val lyricsSpacing: String = "Normal",    // "Tight", "Normal", "Spacious"
     val lyricsAlignment: String = "Left",  // "Left", "Center", "Right", "Follow"

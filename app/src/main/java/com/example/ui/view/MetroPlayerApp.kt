@@ -3967,8 +3967,8 @@ fun SettingsPanel(
                     Text(
                         text = "• 100% Offline Ops: All scans, playlists, and audio synthetics operate solely inside your physical device.\n" +
                                "• 0% Telemetry: We do not collect, transmit, or process any metadata, audio files, or personal statistics.\n" +
-                               "• Zero Advertisements: The app enjoys an ad-free premium system, requiring no billing, internet logins, or hidden payments.\n" +
-                               "• No Extra Permissions: The app only requests the minimum standard storage/audio read access necessary to locate your local files.",
+                               "• Zero Advertisements: The app is completely ad-free with no billing, internet logins, or subscriptions.\n" +
+                               "• Transparent Permissions: Storage access for music file scanning and Notification access for status bar playback controls. We never collect or transmit your data.",
                         color = textSecondaryColor,
                         fontSize = 12.sp,
                         lineHeight = 18.sp
@@ -4199,39 +4199,47 @@ fun SettingsPanel(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 240.dp)
+                        .heightIn(max = 280.dp)
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(text = "Azune Music Player", color = themeAccentColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Text(
-                        text = "Version: 1.0\nBuild SDK: Android 14 (API 34)\nEngine: Jetpack Compose / Kotlin\nDeveloper: Azune Team\n\nA beautiful offline music player inspired by Windows Phone and Microsoft Azune elements, featuring high-fidelity local playback, custom adaptive visual themes, and lyrics scrolling support.",
+                        text = "Version: 1.0\nEngine: Jetpack Compose / Kotlin\nDeveloper: Azune Team\n\nA clean, beautiful offline MP3 music player featuring high-fidelity local playback, custom adaptive visual themes, and lyrics scrolling support.",
                         color = textSecondaryColor,
                         fontSize = 12.sp,
                         lineHeight = 16.sp
                     )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { showPrivacyPolicyFullScreen = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = themeAccentColor, contentColor = Color.White),
+                            shape = androidx.compose.ui.graphics.RectangleShape,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "PRIVACY POLICY", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                        
+                        Button(
+                            onClick = { throw RuntimeException("Test Crash triggered from About Azune screen!") },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F), contentColor = Color.White),
+                            shape = androidx.compose.ui.graphics.RectangleShape,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(text = "CRASH TEST", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { activeDialog = null }) {
-                    Text(text = "OK", color = themeAccentColor)
-                }
-            },
-            dismissButton = {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(onClick = {
-                        throw RuntimeException("Test Crash triggered from About Azune screen!")
-                    }) {
-                        Text(text = "CRASH TEST", color = Color(0xFFFF5252), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-                    TextButton(onClick = { 
-                        showPrivacyPolicyFullScreen = true 
-                    }) {
-                        Text(text = "PRIVACY POLICY", color = themeAccentColor, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
+                    Text(text = "CLOSE", color = themeAccentColor, fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -4334,7 +4342,10 @@ fun SettingsPanel(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Azune Music Player requests standard device permissions, such as read access to media files or audio streams, solely for the purpose of discovering, reading, and playing back local music files stored on your device. These permissions are accessed strictly in compliance with standard Android storage paradigms, and the accessed files are never shared or processed externally.",
+                            text = "Azune Music Player requests standard Android device permissions strictly for offline media functionality:\n\n" +
+                                   "1. Media / Storage Access: Required solely to scan, catalog, and play your local audio files.\n" +
+                                   "2. Notification Access: Required solely to display playback status, current track details, and playback controls in your device status bar and lock screen.\n\n" +
+                                   "We do NOT collect, transmit, upload, or share your personal data, media files, or listening activity with anyone. Everything stays 100% private on your device.",
                             color = textSecondaryColor,
                             fontSize = 12.sp,
                             lineHeight = 18.sp
@@ -4348,19 +4359,6 @@ fun SettingsPanel(
                         )
                         Text(
                             text = "The application feature set is 100% ad-free, requiring no billing setups, premium unlocks, in-app purchases, or internet requirements. Your experience remains private, uncluttered, and purely offline.",
-                            color = textSecondaryColor,
-                            fontSize = 12.sp,
-                            lineHeight = 18.sp
-                        )
-
-                        Text(
-                            text = "Contact Information",
-                            color = textPrimaryColor,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "If you have any questions or feedback regarding our privacy practices or the operations of Azune Music Player, please contact our support team. Your trust/privacy is our highest system priority.",
                             color = textSecondaryColor,
                             fontSize = 12.sp,
                             lineHeight = 18.sp
@@ -5194,7 +5192,7 @@ fun FullscreenPlaybackConsole(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 32.dp, bottom = 8.dp),
+                        .padding(top = 58.dp, bottom = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -7330,7 +7328,7 @@ private fun getPlainLyricsForTrack(track: Track): String {
 [00:04.00]Living in high contrast, color tiles
 [00:08.50]Sliding left and right through the panoramic view
 [00:13.00]Offline tunes pumping right to your hand
-[00:18.00]Microsoft Zune legacy living on again!
+[00:18.00]Azune Player music experience living on!
 [00:23.00]Every chord synthesized in real-time
 [00:28.00]No internet required, local play sublimed
 [00:33.50]Metro Music, bringing design back with grace
@@ -7411,6 +7409,25 @@ fun WelcomeScreen(
 
     val isStoragePermissionGranted = hasPermission
 
+    val onboardingContext = androidx.compose.ui.platform.LocalContext.current
+    var isNotificationPermissionGranted by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                androidx.core.content.ContextCompat.checkSelfPermission(
+                    onboardingContext,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+        )
+    }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        isNotificationPermissionGranted = isGranted
+    }
+
     var showPermissionRequestPopup by remember { mutableStateOf(false) }
     var scanStartedAtLeastOnce by remember { mutableStateOf(false) }
 
@@ -7434,7 +7451,7 @@ fun WelcomeScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = accentColor, contentColor = Color.White),
                     shape = androidx.compose.ui.graphics.RectangleShape
                 ) {
-                    Text("Beri Akses", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("GRANT ACCESS", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             },
             dismissButton = {
@@ -7529,7 +7546,7 @@ fun WelcomeScreen(
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "A sleek, gorgeous, high-fidelity audio synthesizer and library organizer inspired by classic Windows Phone elegance. Let's configure your space in just a few quick actions.",
+                                text = "This app is a beautiful MP3 offline player that doesn't want your data, and no need to subscribe for anything. Let's configure your space in just a few quick actions.",
                                 color = textSecondary,
                                 fontSize = 13.sp,
                                 lineHeight = 18.sp,
@@ -7648,30 +7665,92 @@ fun WelcomeScreen(
                         }
                     }
                     2 -> {
-                        // STEP 2: FOLDER SCANNING
+                        // STEP 2: PERMISSION AND MUSIC SYNC
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Text(
-                                text = "disk sync".uppercase(),
+                                text = "PERMISSION AND MUSIC SYNC".uppercase(),
                                 color = textSecondary,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             )
                             Text(
-                                text = "Scan Music Folders",
+                                text = "Permissions & Music Scan",
                                 color = textPrimary,
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Light,
                                 letterSpacing = (-0.5).sp
                             )
                             Text(
-                                text = "Scan the default local folder directly to automatically catalog stored MP3/FLAC songs.",
+                                text = "Grant notification and storage permissions below to enable status bar controls and auto-catalog your offline tracks.",
                                 color = textSecondary,
                                 fontSize = 13.sp,
                                 lineHeight = 17.sp,
                                 fontWeight = FontWeight.Normal
                             )
 
+                            // TOP BOX: Notification Permission Access Box
+                            if (!isNotificationPermissionGranted) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(accentColor.copy(alpha = 0.08f))
+                                        .border(1.dp, accentColor.copy(alpha = 0.3f), androidx.compose.ui.graphics.RectangleShape)
+                                        .padding(12.dp)
+                                        .clickable {
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                            }
+                                        }
+                                ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Notifications,
+                                                contentDescription = null,
+                                                tint = accentColor,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Text(
+                                                text = "Notification Access (Click to allow)",
+                                                color = accentColor,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = getMetroFontFamily(settings.fontFamily)
+                                            )
+                                        }
+                                        Text(
+                                            text = "Required to show status bar playback controls, album artwork, and song notification details.",
+                                            color = textSecondary,
+                                            fontSize = 11.sp,
+                                            lineHeight = 14.sp
+                                        )
+                                    }
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(accentColor.copy(alpha = 0.1f))
+                                        .border(1.dp, accentColor)
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = accentColor)
+                                    Text(
+                                        text = "Notification access active! Music controls will display in the status bar.",
+                                        color = textPrimary,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+
+                            // BELOW BOX: Music Scan / Storage Access Box
                             if (!isStoragePermissionGranted) {
                                 Box(
                                     modifier = Modifier
@@ -7720,7 +7799,7 @@ fun WelcomeScreen(
                                 ) {
                                     Icon(Icons.Default.CheckCircle, contentDescription = null, tint = accentColor)
                                     Text(
-                                        text = "Music folder access is active! Proceed to scan your tracks below.",
+                                        text = "Music folder access is active! Tap SCAN LOCAL MUSIC NOW below.",
                                         color = textPrimary,
                                         fontSize = 12.sp,
                                         modifier = Modifier.weight(1f)
@@ -7728,9 +7807,7 @@ fun WelcomeScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Scan Button (Only clickable when permission is granted)
+                            // SCAN BUTTON: Located below the music scan box
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -7741,7 +7818,7 @@ fun WelcomeScreen(
                                     }
                                     .padding(vertical = 16.dp),
                                 contentAlignment = Alignment.Center
-                              ) {
+                            ) {
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                                     verticalAlignment = Alignment.CenterVertically
