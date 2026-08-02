@@ -68,8 +68,10 @@ class MusicNotificationService : Service() {
                 val artist = intent.getStringExtra(EXTRA_ARTIST) ?: "Unknown Artist"
                 val isPlaying = intent.getBooleanExtra(EXTRA_IS_PLAYING, false)
                 val trackPath = intent.getStringExtra(EXTRA_TRACK_PATH) ?: ""
+                val duration = intent.getLongExtra(EXTRA_DURATION, 0L)
+                val position = intent.getLongExtra(EXTRA_POSITION, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN)
 
-                updateMediaSession(title, artist, isPlaying, trackPath)
+                updateMediaSession(title, artist, isPlaying, trackPath, duration, position)
                 val notification = buildNotification(title, artist, isPlaying, trackPath)
 
                 try {
@@ -119,7 +121,9 @@ class MusicNotificationService : Service() {
         title: String,
         artist: String,
         isPlaying: Boolean,
-        trackPath: String
+        trackPath: String,
+        duration: Long,
+        position: Long
     ) {
         val session = mediaSession ?: return
 
@@ -131,9 +135,10 @@ class MusicNotificationService : Service() {
                 PlaybackStateCompat.ACTION_PLAY_PAUSE or
                 PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
                 PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
-                PlaybackStateCompat.ACTION_STOP
+                PlaybackStateCompat.ACTION_STOP or
+                PlaybackStateCompat.ACTION_SEEK_TO
             )
-            .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f)
+            .setState(state, position, if (isPlaying) 1.0f else 0.0f)
             .build()
         session.setPlaybackState(playbackState)
 
@@ -154,6 +159,7 @@ class MusicNotificationService : Service() {
         val metadataBuilder = MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
             .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
+            .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration)
         if (albumArtBitmap != null) {
             metadataBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, albumArtBitmap)
         }
@@ -305,13 +311,16 @@ class MusicNotificationService : Service() {
         const val EXTRA_ARTIST = "extra_artist"
         const val EXTRA_IS_PLAYING = "extra_is_playing"
         const val EXTRA_TRACK_PATH = "extra_track_path"
+        const val EXTRA_DURATION = "extra_duration"
+        const val EXTRA_POSITION = "extra_position"
 
         var onNotificationAction: ((String) -> Unit)? = null
 
         fun updateNotification(
             context: Context,
             track: Track?,
-            isPlaying: Boolean
+            isPlaying: Boolean,
+            positionMs: Long = 0L
         ) {
             if (track == null) {
                 stopNotification(context)
@@ -324,6 +333,8 @@ class MusicNotificationService : Service() {
                 putExtra(EXTRA_ARTIST, track.artist)
                 putExtra(EXTRA_IS_PLAYING, isPlaying)
                 putExtra(EXTRA_TRACK_PATH, track.path)
+                putExtra(EXTRA_DURATION, track.durationMs)
+                putExtra(EXTRA_POSITION, positionMs)
             }
 
             try {

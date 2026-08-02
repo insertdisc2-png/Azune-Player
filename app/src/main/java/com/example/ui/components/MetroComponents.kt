@@ -46,22 +46,7 @@ val InterFontFamily = FontFamily.SansSerif
 private var safeInterFontFamily: FontFamily? = null
 
 fun getSafeInterFontFamily(context: android.content.Context): FontFamily {
-    safeInterFontFamily?.let { return it }
-    
-    val family = try {
-        FontFamily(
-            androidx.compose.ui.text.font.Font(resId = com.example.R.font.inter_light, weight = FontWeight.Light),
-            androidx.compose.ui.text.font.Font(resId = com.example.R.font.inter_regular, weight = FontWeight.Normal),
-            androidx.compose.ui.text.font.Font(resId = com.example.R.font.inter_medium, weight = FontWeight.Medium),
-            androidx.compose.ui.text.font.Font(resId = com.example.R.font.inter_semibold, weight = FontWeight.SemiBold),
-            androidx.compose.ui.text.font.Font(resId = com.example.R.font.inter_bold, weight = FontWeight.Bold)
-        )
-    } catch (e: Throwable) {
-        FontFamily.SansSerif
-    }
-    
-    safeInterFontFamily = family
-    return family
+    return FontFamily.SansSerif
 }
 
 private fun isValidTtfHeader(file: java.io.File): Boolean {

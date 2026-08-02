@@ -153,7 +153,8 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
                 com.example.service.MusicNotificationService.updateNotification(
                     application.applicationContext,
                     track,
-                    isPlaying
+                    isPlaying,
+                    _playbackPosition.value
                 )
             }
         }
@@ -255,6 +256,9 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
 
     // Playback controls
     fun playTrack(track: Track, customQueue: List<Track> = emptyList()) {
+        _playbackPosition.value = 0L
+        _playbackDuration.value = track.durationMs
+        _isPlayingState.value = true
         _currentTrack.value = track
         
         // Define Queue
@@ -265,11 +269,7 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
         }
         _playbackQueueState.value = playbackQueue
         currentQueueIndex = playbackQueue.indexOfFirst { it.id == track.id }
-
         playerEngine.play(track)
-        _isPlayingState.value = true
-        _playbackDuration.value = track.durationMs
-        _playbackPosition.value = 0L
 
         // Reapply current speed and pitch if configured
         playerEngine.setPlaybackSpeedAndPitch(_playbackSpeedVal.value, _playbackPitchVal.value)
@@ -349,6 +349,12 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
         _playbackPosition.value = positionMs
         _currentTrack.value?.let { track ->
             saveLastPlayedTrack(track.id, positionMs)
+            com.example.service.MusicNotificationService.updateNotification(
+                getApplication(),
+                track,
+                _isPlayingState.value,
+                positionMs
+            )
         }
     }
 

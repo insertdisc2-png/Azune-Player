@@ -22,8 +22,8 @@ android {
     applicationId = "com.azune"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = 2
+    versionName = "1.1"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -64,7 +64,6 @@ android {
     buildConfig = true
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
-  base.archivesName.set("Azune")
 }
 
 // Configure the Secrets Gradle Plugin to use .env and .env.example files
@@ -197,3 +196,4 @@ tasks.register("downloadInterFonts") {
 }
 
 
+// Force rebuild

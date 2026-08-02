@@ -539,7 +539,8 @@ fun MetroPlayerApp(
                                     onRememberLastPlayedChange = { viewModel.setRememberLastPlayed(it) },
                                     onVisibleTilesChange = { viewModel.setVisibleTiles(it) },
                                     onCoverArtBorderThicknessChange = { viewModel.setCoverArtBorderThickness(it) },
-                                    onArtistSeparatorsChange = { viewModel.setArtistSeparators(it) }
+                                    onArtistSeparatorsChange = { viewModel.setArtistSeparators(it) },
+                                    onReRunOnboarding = { viewModel.setWelcomeCompleted(false) }
                                 )
                             }
                             99 -> {
@@ -653,7 +654,7 @@ fun MetroPlayerApp(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                shape = androidx.compose.ui.graphics.RectangleShape,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                 colors = androidx.compose.material3.CardDefaults.cardColors(
                     containerColor = if (isLight) Color.White else Color(0xFF141414)
                 ),
@@ -757,7 +758,7 @@ fun MetroPlayerApp(
                     )
                 }
             },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = Color(0xFF151515)
         )
     }
@@ -826,7 +827,7 @@ fun MetroPlayerApp(
                     }
                 }
             },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = Color(0xFF151515)
         )
     }
@@ -1125,7 +1126,7 @@ fun MainTilesHub(
                                     .clickable { if (!isEditMode) onConsoleTrigger() }
                                     .dragToSwap("now_playing")
                                     .border(2.dp, gridTileBorderColor),
-                                shape = androidx.compose.ui.graphics.RectangleShape,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                                 colors = CardDefaults.cardColors(containerColor = tileBg)
                             ) {
                                 when (sizeType) {
@@ -1513,7 +1514,7 @@ fun MainTilesHub(
                                     )
                                     .dragToSwap("pinned_tracks")
                                     .border(2.dp, gridTileBorderColor),
-                                shape = androidx.compose.ui.graphics.RectangleShape,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                                 colors = CardDefaults.cardColors(containerColor = tileBg)
                             ) {
                                 when (sizeType) {
@@ -2043,7 +2044,7 @@ fun MyMusicLibPanel(
                             containerColor = containerColor,
                             contentColor = contentColor
                         ),
-                        shape = androidx.compose.ui.graphics.RectangleShape,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                         modifier = Modifier.height(34.dp)
                     ) {
@@ -2074,7 +2075,7 @@ fun MyMusicLibPanel(
                         containerColor = containerColor,
                         contentColor = contentColor
                     ),
-                    shape = androidx.compose.ui.graphics.RectangleShape,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                     modifier = Modifier.height(34.dp)
                 ) {
@@ -2101,7 +2102,7 @@ fun MyMusicLibPanel(
                     onDismissRequest = { isSortMenuExpanded = false },
                     modifier = Modifier
                         .background(if (isLight) Color.White else if (settings.themeMode == "amoled") Color.Black else Color(0xFF141414))
-                        .border(1.dp, themeAccentColor, androidx.compose.ui.graphics.RectangleShape)
+                        .border(1.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                 ) {
                     // Ascending & Descending options at the top
                     listOf(true to "Ascending", false to "Descending").forEach { (asc, label) ->
@@ -2302,7 +2303,7 @@ fun PlaylistsPanel(
                             .aspectRatio(1.2f)
                             .clickable { onPlaylistSelect(item.id) }
                             .border(1.dp, tileBorderColor),
-                        shape = androidx.compose.ui.graphics.RectangleShape,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                         colors = CardDefaults.cardColors(containerColor = tileBg)
                     ) {
                         Box(
@@ -2529,7 +2530,7 @@ fun AlbumsPanel(
                                     resolution = settings.coverArtResolution,
                                     modifier = Modifier
                                         .size(64.dp)
-                                        .border(1.dp, themeAccentColor, androidx.compose.ui.graphics.RectangleShape),
+                                        .border(1.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp)),
                                     fallbackSymbol = "💿",
                                     symbolFontSize = 32.sp,
                                     themeAccentColor = themeAccentColor,
@@ -2540,7 +2541,7 @@ fun AlbumsPanel(
                                     modifier = Modifier
                                         .size(64.dp)
                                         .background(themeAccentColor.copy(alpha = 0.15f))
-                                        .border(1.dp, themeAccentColor, androidx.compose.ui.graphics.RectangleShape),
+                                        .border(1.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -2639,7 +2640,8 @@ fun SettingsPanel(
     onRememberLastPlayedChange: (Boolean) -> Unit,
     onVisibleTilesChange: (String) -> Unit,
     onCoverArtBorderThicknessChange: (String) -> Unit,
-    onArtistSeparatorsChange: (String) -> Unit
+    onArtistSeparatorsChange: (String) -> Unit,
+    onReRunOnboarding: () -> Unit = {}
 ) {
     // Determine active theme colors dynamically (allowing Follow System option)
     val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
@@ -3066,7 +3068,7 @@ fun SettingsPanel(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                         .background(themeAccentColor.copy(alpha = 0.12f))
-                        .border(1.dp, themeAccentColor, androidx.compose.ui.graphics.RectangleShape)
+                        .border(1.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                         .padding(12.dp)
                 ) {
                     Text(
@@ -3077,6 +3079,19 @@ fun SettingsPanel(
                     )
                 }
             }
+        }
+
+        // Row 6c: RE-RUN PERMISSION AND MUSIC SYNC WIZARD
+        item {
+            SettingsListRow(
+                title = "RE-RUN PERMISSION AND MUSIC SYNC",
+                description = "Re-open the initial setup wizard to grant notification access and scan your offline music.",
+                accentColor = themeAccentColor,
+                textColor = textPrimaryColor,
+                descColor = textSecondaryColor,
+                icon = Icons.Default.Notifications,
+                onClick = { onReRunOnboarding() }
+            )
         }
 
 
@@ -3122,7 +3137,7 @@ fun SettingsPanel(
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
                             .background(themeAccentColor.copy(alpha = 0.12f))
-                            .border(1.dp, themeAccentColor, androidx.compose.ui.graphics.RectangleShape)
+                            .border(1.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                             .padding(12.dp)
                             .clickable { showCachePurgeToast = false }
                     ) {
@@ -3219,7 +3234,7 @@ fun SettingsPanel(
                         Box(
                             modifier = Modifier
                                 .size(20.dp)
-                                .border(1.5.dp, themeAccentColor, androidx.compose.ui.graphics.RectangleShape)
+                                .border(1.5.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                                 .background(if (checked) themeAccentColor else Color.Transparent),
                             contentAlignment = Alignment.Center
                         ) {
@@ -3304,7 +3319,7 @@ fun SettingsPanel(
     if (activeDialog == "lyricsFont") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = "Lyrics Font Family", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3342,7 +3357,7 @@ fun SettingsPanel(
     if (activeDialog == "lyricsSpacing") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = "Lyrics Line Spacing", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3380,7 +3395,7 @@ fun SettingsPanel(
     if (activeDialog == "lyricsAlign") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = "Lyrics Alignment", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3418,7 +3433,7 @@ fun SettingsPanel(
     if (activeDialog == "lyricsFontSize") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = "Lyrics Font Size", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3456,7 +3471,7 @@ fun SettingsPanel(
     if (activeDialog == "theme") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else if (settings.themeMode == "amoled") Color.Black else Color(0xFF141414),
             title = { Text(text = "Theme Mode", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3504,7 +3519,7 @@ fun SettingsPanel(
     if (activeDialog == "accent") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = "Accent Color", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3622,7 +3637,7 @@ fun SettingsPanel(
 
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = "App Font Family", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3670,7 +3685,7 @@ fun SettingsPanel(
                     Button(
                         onClick = { fontLauncher.launch("*/*") },
                         colors = ButtonDefaults.buttonColors(containerColor = themeAccentColor),
-                        shape = androidx.compose.ui.graphics.RectangleShape,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(androidx.compose.material.icons.Icons.Default.Upload, contentDescription = null, tint = Color.White)
@@ -3691,7 +3706,7 @@ fun SettingsPanel(
     if (activeDialog == "transparency") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = "Acrylic Transparency", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3727,7 +3742,7 @@ fun SettingsPanel(
     if (activeDialog == "bgStyle") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else if (settings.themeMode == "amoled") Color.Black else Color(0xFF141414),
             title = { Text(text = "App Background", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3777,7 +3792,7 @@ fun SettingsPanel(
     if (activeDialog == "bgOpacity") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = if (isLight) "Aero Light Background" else "Dark mode Background", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3817,7 +3832,7 @@ fun SettingsPanel(
     if (activeDialog == "playerBgStyle") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else if (settings.themeMode == "amoled") Color.Black else Color(0xFF141414),
             title = { Text(text = "Player Background Style", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3865,7 +3880,7 @@ fun SettingsPanel(
     if (activeDialog == "coverArtResolution") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else if (settings.themeMode == "amoled") Color.Black else Color(0xFF141414),
             title = { Text(text = "Cover Image Resolution", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3913,7 +3928,7 @@ fun SettingsPanel(
     if (activeDialog == "playerBgIntensity") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = "Player Background Intensity", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3953,7 +3968,7 @@ fun SettingsPanel(
     if (activeDialog == "privacyPolicy") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else if (settings.themeMode == "amoled") Color.Black else Color(0xFF141414),
             title = { Text(text = "Privacy Policy", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -3989,7 +4004,7 @@ fun SettingsPanel(
         if (!showFolderExplorer) {
             AlertDialog(
                 onDismissRequest = { activeDialog = null },
-                shape = androidx.compose.ui.graphics.RectangleShape,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                 containerColor = if (isLight) Color.White else Color(0xFF141414),
                 title = { Text(text = "Select Folder", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
                 text = {
@@ -4003,7 +4018,7 @@ fun SettingsPanel(
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = themeAccentColor, contentColor = Color.White),
-                            shape = androidx.compose.ui.graphics.RectangleShape
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
                         ) {
                             Text(text = "Default (All Folders in /0/)", fontSize = 13.sp)
                         }
@@ -4012,7 +4027,7 @@ fun SettingsPanel(
                             onClick = { showFolderExplorer = true },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = textPrimaryColor.copy(alpha = 0.08f), contentColor = textPrimaryColor),
-                            shape = androidx.compose.ui.graphics.RectangleShape
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
                         ) {
                             Text(text = "Custom Folder Selection...", fontSize = 13.sp)
                         }
@@ -4053,7 +4068,7 @@ fun SettingsPanel(
 
             AlertDialog(
                 onDismissRequest = { activeDialog = null },
-                shape = androidx.compose.ui.graphics.RectangleShape,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                 containerColor = if (isLight) Color.White else Color(0xFF141414),
                 title = {
                     Column {
@@ -4141,7 +4156,7 @@ fun SettingsPanel(
                                         .border(
                                             1.dp,
                                             if (isSelected) themeAccentColor else Color.Transparent,
-                                            androidx.compose.ui.graphics.RectangleShape
+                                            androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
                                         )
                                         .padding(horizontal = 8.dp, vertical = 10.dp),
                                     verticalAlignment = Alignment.CenterVertically
@@ -4192,7 +4207,7 @@ fun SettingsPanel(
     if (activeDialog == "info") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = "About Azune", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -4205,7 +4220,7 @@ fun SettingsPanel(
                 ) {
                     Text(text = "Azune Music Player", color = themeAccentColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     Text(
-                        text = "Version: 1.0\nEngine: Jetpack Compose / Kotlin\nDeveloper: Azune Team\n\nA clean, beautiful offline MP3 music player featuring high-fidelity local playback, custom adaptive visual themes, and lyrics scrolling support.",
+                        text = "Version: ${com.example.BuildConfig.VERSION_NAME}\nEngine: Jetpack Compose / Kotlin\nDeveloper: Azune Team\n\nA clean, beautiful offline MP3 music player featuring high-fidelity local playback, custom adaptive visual themes, and lyrics scrolling support.",
                         color = textSecondaryColor,
                         fontSize = 12.sp,
                         lineHeight = 16.sp
@@ -4220,7 +4235,7 @@ fun SettingsPanel(
                         Button(
                             onClick = { showPrivacyPolicyFullScreen = true },
                             colors = ButtonDefaults.buttonColors(containerColor = themeAccentColor, contentColor = Color.White),
-                            shape = androidx.compose.ui.graphics.RectangleShape,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(text = "PRIVACY POLICY", fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -4229,7 +4244,7 @@ fun SettingsPanel(
                         Button(
                             onClick = { throw RuntimeException("Test Crash triggered from About Azune screen!") },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F), contentColor = Color.White),
-                            shape = androidx.compose.ui.graphics.RectangleShape,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(text = "CRASH TEST", fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -4386,7 +4401,7 @@ fun SettingsPanel(
     if (activeDialog == "borderThickness") {
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = "Cover Art Border Thickness", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -4430,7 +4445,7 @@ fun SettingsPanel(
         var tempSeps by remember { mutableStateOf(settings.artistSeparators) }
         AlertDialog(
             onDismissRequest = { activeDialog = null },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = if (isLight) Color.White else Color(0xFF141414),
             title = { Text(text = "Artist Name Separators", color = textPrimaryColor, fontSize = 18.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -4849,7 +4864,7 @@ fun MiniPlaybackStrip(
                     modifier = Modifier
                         .padding(end = 10.dp)
                         .size(40.dp)
-                        .border(1.dp, textPrimaryColor.copy(alpha = 0.15f), androidx.compose.ui.graphics.RectangleShape),
+                        .border(1.dp, textPrimaryColor.copy(alpha = 0.15f), androidx.compose.foundation.shape.RoundedCornerShape(0.dp)),
                     fallbackSymbol = "♬",
                     symbolFontSize = 20.sp,
                     themeAccentColor = themeAccentColor,
@@ -5055,10 +5070,10 @@ fun FullscreenPlaybackConsole(
 
     // Cover custom corner style resolution
     val coverShape = when (settings.cornerCoverArt) {
-        "sharp" -> androidx.compose.ui.graphics.RectangleShape
+        "sharp" -> androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
         "rounded" -> androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
         "circle" -> androidx.compose.foundation.shape.CircleShape
-        else -> androidx.compose.ui.graphics.RectangleShape
+        else -> androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
     }
 
     val borderThicknessDp = when (settings.coverArtBorderThickness.lowercase()) {
@@ -5848,9 +5863,9 @@ fun FullscreenPlaybackConsole(
                     modifier = Modifier
                         .fillMaxWidth()
                         .fillMaxHeight(0.82f)
-                        .border(1.dp, themeAccentColor, androidx.compose.ui.graphics.RectangleShape)
+                        .border(1.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                         .align(Alignment.BottomCenter),
-                    shape = androidx.compose.ui.graphics.RectangleShape,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                     colors = CardDefaults.cardColors(containerColor = if (settings.themeMode == "light") Color(0xFFECECEC) else if (settings.themeMode == "amoled") Color.Black else Color(0xFF101010))
                 ) {
                     Column(
@@ -5903,7 +5918,7 @@ fun FullscreenPlaybackConsole(
                                     
                                     Button(
                                         onClick = onTogglePinned,
-                                        shape = androidx.compose.ui.graphics.RectangleShape,
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                                         border = androidx.compose.foundation.BorderStroke(1.dp, themeAccentColor),
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = if (isPinned) themeAccentColor else Color.Transparent,
@@ -5973,7 +5988,7 @@ fun FullscreenPlaybackConsole(
                                                     .fillMaxWidth()
                                                     .padding(16.dp)
                                                     .fillMaxHeight(0.75f),
-                                                shape = androidx.compose.ui.graphics.RectangleShape,
+                                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                                                 border = androidx.compose.foundation.BorderStroke(2.dp, themeAccentColor),
                                                 colors = CardDefaults.cardColors(
                                                     containerColor = if (isLight) Color.White else Color(0xFF141414)
@@ -6159,8 +6174,8 @@ fun FullscreenPlaybackConsole(
                                     Card(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .border(1.dp, textPrimary.copy(alpha = 0.1f), androidx.compose.ui.graphics.RectangleShape),
-                                        shape = androidx.compose.ui.graphics.RectangleShape,
+                                            .border(1.dp, textPrimary.copy(alpha = 0.1f), androidx.compose.foundation.shape.RoundedCornerShape(0.dp)),
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                                         colors = CardDefaults.cardColors(containerColor = textPrimary.copy(alpha = 0.02f))
                                     ) {
                                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -6229,7 +6244,7 @@ fun FullscreenPlaybackConsole(
                                             onDeleteTrack(track)
                                         },
                                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828), contentColor = Color.White),
-                                        shape = androidx.compose.ui.graphics.RectangleShape,
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                                         modifier = Modifier.fillMaxWidth(),
                                         contentPadding = PaddingValues(vertical = 12.dp)
                                     ) {
@@ -6307,9 +6322,9 @@ fun AdvancedOptionsSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.82f)
-                    .border(1.dp, themeAccentColor, androidx.compose.ui.graphics.RectangleShape)
+                    .border(1.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                     .align(Alignment.BottomCenter),
-                shape = androidx.compose.ui.graphics.RectangleShape,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                 colors = CardDefaults.cardColors(containerColor = if (settings.themeMode == "light") Color(0xFFECECEC) else if (settings.themeMode == "amoled") Color.Black else Color(0xFF101010))
             ) {
                 Column(
@@ -6362,7 +6377,7 @@ fun AdvancedOptionsSheet(
                                 
                                 Button(
                                     onClick = onTogglePinned,
-                                    shape = androidx.compose.ui.graphics.RectangleShape,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                                     border = androidx.compose.foundation.BorderStroke(1.dp, themeAccentColor),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = if (isPinned) themeAccentColor else Color.Transparent,
@@ -6432,7 +6447,7 @@ fun AdvancedOptionsSheet(
                                                 .fillMaxWidth()
                                                 .padding(16.dp)
                                                 .fillMaxHeight(0.75f),
-                                            shape = androidx.compose.ui.graphics.RectangleShape,
+                                            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                                             border = androidx.compose.foundation.BorderStroke(2.dp, themeAccentColor),
                                             colors = CardDefaults.cardColors(
                                                 containerColor = if (isLight) Color.White else Color(0xFF141414)
@@ -6618,8 +6633,8 @@ fun AdvancedOptionsSheet(
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .border(1.dp, textPrimary.copy(alpha = 0.1f), androidx.compose.ui.graphics.RectangleShape),
-                                    shape = androidx.compose.ui.graphics.RectangleShape,
+                                        .border(1.dp, textPrimary.copy(alpha = 0.1f), androidx.compose.foundation.shape.RoundedCornerShape(0.dp)),
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                                     colors = CardDefaults.cardColors(containerColor = textPrimary.copy(alpha = 0.02f))
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -6688,7 +6703,7 @@ fun AdvancedOptionsSheet(
                                         onDeleteTrack(track)
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828), contentColor = Color.White),
-                                    shape = androidx.compose.ui.graphics.RectangleShape,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                                     modifier = Modifier.fillMaxWidth(),
                                     contentPadding = PaddingValues(vertical = 12.dp)
                                 ) {
@@ -7449,7 +7464,7 @@ fun WelcomeScreen(
                         onRequestPermission()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = accentColor, contentColor = Color.White),
-                    shape = androidx.compose.ui.graphics.RectangleShape
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
                 ) {
                     Text("GRANT ACCESS", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
@@ -7458,7 +7473,7 @@ fun WelcomeScreen(
                 Button(
                     onClick = { showPermissionRequestPopup = false },
                     colors = ButtonDefaults.buttonColors(containerColor = textPrimary.copy(alpha = 0.1f), contentColor = textPrimary),
-                    shape = androidx.compose.ui.graphics.RectangleShape
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp)
                 ) {
                     Text("Cancel", fontSize = 12.sp)
                 }
@@ -7480,7 +7495,7 @@ fun WelcomeScreen(
                     lineHeight = 18.sp
                 )
             },
-            shape = androidx.compose.ui.graphics.RectangleShape,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
             containerColor = canvasBg
         )
     }
@@ -7524,34 +7539,69 @@ fun WelcomeScreen(
                         // STEP 0: GREETING & HELLO
                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Text(
-                                text = "hello!".uppercase(),
+                                text = "WELCOME".uppercase(),
                                 color = textSecondary,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.ExtraLight,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
                                 letterSpacing = 2.sp
                             )
                             Text(
                                 text = "Azune Player",
                                 color = accentColor,
-                                fontSize = 44.sp,
+                                fontSize = 42.sp,
                                 fontWeight = FontWeight.Light,
                                 letterSpacing = (-2).sp
                             )
                             Text(
-                                text = "experience offline high-contrast listening.",
+                                text = "Clean, 100% Offline MP3 Music Player",
                                 color = textPrimary,
                                 fontSize = 15.sp,
-                                fontWeight = FontWeight.Normal,
+                                fontWeight = FontWeight.SemiBold,
                                 letterSpacing = (-0.5).sp
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "This app is a beautiful MP3 offline player that doesn't want your data, and no need to subscribe for anything. Let's configure your space in just a few quick actions.",
-                                color = textSecondary,
-                                fontSize = 13.sp,
-                                lineHeight = 18.sp,
-                                fontWeight = FontWeight.Normal
-                            )
+                            
+                            Spacer(modifier = Modifier.height(4.dp))
+                            
+                            // Feature Highlights Outline
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(accentColor.copy(alpha = 0.06f))
+                                    .border(1.dp, accentColor.copy(alpha = 0.2f), androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
+                                    .padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Palette, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
+                                    Column {
+                                        Text("1. Personalize Aesthetics", color = textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                        Text("Themes, accents, and custom background gridlines", color = textSecondary, fontSize = 11.sp)
+                                    }
+                                }
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Notifications, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
+                                    Column {
+                                        Text("2. Permission and Music Sync", color = textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                        Text("Notification status bar controls & local music scan", color = textSecondary, fontSize = 11.sp)
+                                    }
+                                }
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = accentColor, modifier = Modifier.size(20.dp))
+                                    Column {
+                                        Text("3. Zero Data Collection", color = textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                        Text("100% private, no trackers, no subscriptions, completely ad-free", color = textSecondary, fontSize = 11.sp)
+                                    }
+                                }
+                            }
                         }
                     }
                     1 -> {
@@ -7695,7 +7745,7 @@ fun WelcomeScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .background(accentColor.copy(alpha = 0.08f))
-                                        .border(1.dp, accentColor.copy(alpha = 0.3f), androidx.compose.ui.graphics.RectangleShape)
+                                        .border(1.dp, accentColor.copy(alpha = 0.3f), androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                                         .padding(12.dp)
                                         .clickable {
                                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -7756,7 +7806,7 @@ fun WelcomeScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .background(accentColor.copy(alpha = 0.08f))
-                                        .border(1.dp, accentColor.copy(alpha = 0.3f), androidx.compose.ui.graphics.RectangleShape)
+                                        .border(1.dp, accentColor.copy(alpha = 0.3f), androidx.compose.foundation.shape.RoundedCornerShape(0.dp))
                                         .padding(12.dp)
                                         .clickable { showPermissionRequestPopup = true }
                                 ) {
@@ -7930,7 +7980,7 @@ fun WelcomeScreen(
                     Button(
                         onClick = { step-- },
                         colors = ButtonDefaults.buttonColors(containerColor = textPrimary.copy(alpha = 0.05f), contentColor = textPrimary),
-                        shape = androidx.compose.ui.graphics.RectangleShape,
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp)
@@ -7960,7 +8010,7 @@ fun WelcomeScreen(
                         disabledContainerColor = accentColor.copy(alpha = 0.2f),
                         disabledContentColor = textPrimary.copy(alpha = 0.4f)
                     ),
-                    shape = androidx.compose.ui.graphics.RectangleShape,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
