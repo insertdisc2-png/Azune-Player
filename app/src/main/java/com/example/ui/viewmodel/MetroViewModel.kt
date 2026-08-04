@@ -162,12 +162,20 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
         // Handle user control actions from MusicNotificationService
         com.example.service.MusicNotificationService.onNotificationAction = { action ->
             when (action) {
-                com.example.service.MusicNotificationService.ACTION_PLAY,
-                com.example.service.MusicNotificationService.ACTION_PAUSE -> togglePlayPause()
+                com.example.service.MusicNotificationService.ACTION_PLAY -> resumePlayback()
+                com.example.service.MusicNotificationService.ACTION_PAUSE -> pausePlayback()
                 com.example.service.MusicNotificationService.ACTION_NEXT -> playNextTrack()
                 com.example.service.MusicNotificationService.ACTION_PREVIOUS -> playPreviousTrack()
                 com.example.service.MusicNotificationService.ACTION_STOP -> stopPlayback()
             }
+        }
+        com.example.service.MusicNotificationService.onNotificationSeek = { pos ->
+            seekTo(pos)
+        }
+        com.example.service.MusicNotificationService.onNotificationSeekDelta = { delta ->
+            val currentPos = if (playerEngine.isPlaying()) playerEngine.getCurrentPosition() else _playbackPosition.value
+            val target = (currentPos + delta).coerceIn(0L, _playbackDuration.value.coerceAtLeast(1L))
+            seekTo(target)
         }
     }
 
@@ -279,25 +287,38 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
         saveLastPlayedTrack(track.id, 0L)
     }
 
-    fun togglePlayPause() {
-        val track = _currentTrack.value ?: return
+    private var lastSeekTimestamp = 0L
+
+    fun pausePlayback() {
         if (playerEngine.isPlaying()) {
             playerEngine.pause()
-            _isPlayingState.value = false
-        } else {
+        }
+        _isPlayingState.value = false
+    }
+
+    fun resumePlayback() {
+        val track = _currentTrack.value ?: return
+        if (!playerEngine.isPlaying()) {
             if (!playerEngine.isPrepared()) {
                 val lastPos = _playbackPosition.value
                 playerEngine.play(track)
                 if (lastPos > 0L) {
                     playerEngine.seekTo(lastPos)
                 }
-                _isPlayingState.value = true
                 playerEngine.setPlaybackSpeedAndPitch(_playbackSpeedVal.value, _playbackPitchVal.value)
                 startPositionTicker()
             } else {
                 playerEngine.resume()
-                _isPlayingState.value = true
             }
+            _isPlayingState.value = true
+        }
+    }
+
+    fun togglePlayPause() {
+        if (playerEngine.isPlaying()) {
+            pausePlayback()
+        } else {
+            resumePlayback()
         }
     }
 
@@ -345,6 +366,7 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun seekTo(positionMs: Long) {
+        lastSeekTimestamp = System.currentTimeMillis()
         playerEngine.seekTo(positionMs)
         _playbackPosition.value = positionMs
         _currentTrack.value?.let { track ->
@@ -365,14 +387,17 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
             while (true) {
                 if (playerEngine.isPlaying()) {
                     val pos = playerEngine.getCurrentPosition()
-                    _playbackPosition.value = pos
-                    _playbackDuration.value = playerEngine.getDuration()
+                    val now = System.currentTimeMillis()
+                    if (now - lastSeekTimestamp > 800L || kotlin.math.abs(pos - _playbackPosition.value) < 1500L) {
+                        _playbackPosition.value = pos
+                        _playbackDuration.value = playerEngine.getDuration()
+                    }
 
                     saveCounter++
                     if (saveCounter >= 40) { // every ~5 seconds (40 * 120 ms)
                         saveCounter = 0
                         _currentTrack.value?.let { track ->
-                            saveLastPlayedTrack(track.id, pos)
+                            saveLastPlayedTrack(track.id, _playbackPosition.value)
                         }
                     }
                 }

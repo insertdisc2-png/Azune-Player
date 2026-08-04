@@ -198,8 +198,7 @@ fun MetroBackgroundContainer(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(gradientBrush)
-                        .alpha(settings.appBackgroundOpacity)
+                        .background(brush = gradientBrush, alpha = settings.appBackgroundOpacity)
                 )
             } else {
                 val context = androidx.compose.ui.platform.LocalContext.current
@@ -246,7 +245,9 @@ fun MetroBackgroundContainer(
 
         // Draw elegant mathematical mesh grid background typical of WP SDK design layouts
         if (bgStyle != "solid") {
-            Canvas(modifier = Modifier.fillMaxSize().alpha(if (resolvedTheme == "light") 0.04f else 0.08f)) {
+            val gridAlpha = if (resolvedTheme == "light") 0.04f else 0.08f
+            val gridColor = lineAccent.copy(alpha = gridAlpha)
+            Canvas(modifier = Modifier.fillMaxSize()) {
                 val width = size.width
                 val height = size.height
 
@@ -257,7 +258,7 @@ fun MetroBackgroundContainer(
                         var x = 0f
                         while (x < width) {
                             drawLine(
-                                color = lineAccent,
+                                color = gridColor,
                                 start = androidx.compose.ui.geometry.Offset(x, 0f),
                                 end = androidx.compose.ui.geometry.Offset(x, height),
                                 strokeWidth = 0.5.dp.toPx()
@@ -267,7 +268,7 @@ fun MetroBackgroundContainer(
                         var y = 0f
                         while (y < height) {
                             drawLine(
-                                color = lineAccent,
+                                color = gridColor,
                                 start = androidx.compose.ui.geometry.Offset(0f, y),
                                 end = androidx.compose.ui.geometry.Offset(width, y),
                                 strokeWidth = 0.5.dp.toPx()
@@ -284,13 +285,13 @@ fun MetroBackgroundContainer(
                                 if ((cCol + cRow) % 3 == 0) {
                                     val sizeVal = 6.dp.toPx()
                                     drawLine(
-                                        color = lineAccent,
+                                        color = gridColor,
                                         start = androidx.compose.ui.geometry.Offset(cx - sizeVal, cy),
                                         end = androidx.compose.ui.geometry.Offset(cx + sizeVal, cy),
                                         strokeWidth = 1.dp.toPx()
                                     )
                                     drawLine(
-                                        color = lineAccent,
+                                        color = gridColor,
                                         start = androidx.compose.ui.geometry.Offset(cx, cy - sizeVal),
                                         end = androidx.compose.ui.geometry.Offset(cx, cy + sizeVal),
                                         strokeWidth = 1.dp.toPx()
@@ -309,7 +310,7 @@ fun MetroBackgroundContainer(
                         var x = 0f
                         while (x < width) {
                             drawLine(
-                                color = lineAccent,
+                                color = gridColor,
                                 start = androidx.compose.ui.geometry.Offset(x, 0f),
                                 end = androidx.compose.ui.geometry.Offset(x, height),
                                 strokeWidth = 0.5.dp.toPx()
@@ -319,7 +320,7 @@ fun MetroBackgroundContainer(
                         var y = 0f
                         while (y < height) {
                             drawLine(
-                                color = lineAccent,
+                                color = gridColor,
                                 start = androidx.compose.ui.geometry.Offset(0f, y),
                                 end = androidx.compose.ui.geometry.Offset(width, y),
                                 strokeWidth = 0.5.dp.toPx()
@@ -331,7 +332,7 @@ fun MetroBackgroundContainer(
                         var rx = 0f
                         while (rx < width) {
                             drawLine(
-                                color = lineAccent,
+                                color = gridColor,
                                 start = androidx.compose.ui.geometry.Offset(rx, 0f),
                                 end = androidx.compose.ui.geometry.Offset(rx, tickLen),
                                 strokeWidth = 1.dp.toPx()
@@ -341,7 +342,7 @@ fun MetroBackgroundContainer(
                         var ry = 0f
                         while (ry < height) {
                             drawLine(
-                                color = lineAccent,
+                                color = gridColor,
                                 start = androidx.compose.ui.geometry.Offset(0f, ry),
                                 end = androidx.compose.ui.geometry.Offset(tickLen, ry),
                                 strokeWidth = 1.dp.toPx()
@@ -350,13 +351,13 @@ fun MetroBackgroundContainer(
                         }
                         // Diagonal projection lines
                         drawLine(
-                            color = lineAccent,
+                            color = gridColor,
                             start = androidx.compose.ui.geometry.Offset(0f, 0f),
                             end = androidx.compose.ui.geometry.Offset(width, width),
                             strokeWidth = 0.5.dp.toPx()
                         )
                         drawLine(
-                            color = lineAccent,
+                            color = gridColor,
                             start = androidx.compose.ui.geometry.Offset(0f, height),
                             end = androidx.compose.ui.geometry.Offset(width, height - width),
                             strokeWidth = 0.5.dp.toPx()
@@ -391,7 +392,7 @@ fun MetroBackgroundContainer(
                         connections.forEach { (a, b) ->
                             if (a < stars.size && b < stars.size) {
                                 drawLine(
-                                    color = lineAccent,
+                                    color = gridColor,
                                     start = stars[a],
                                     end = stars[b],
                                     strokeWidth = 0.5.dp.toPx()
@@ -399,7 +400,7 @@ fun MetroBackgroundContainer(
                             }
                         }
                         stars.forEach { pos ->
-                            drawCircle(color = lineAccent, radius = 3.dp.toPx(), center = pos)
+                            drawCircle(color = gridColor, radius = 3.dp.toPx(), center = pos)
                             drawCircle(color = lineAccent.copy(alpha = 0.3f), radius = 7.dp.toPx(), center = pos)
                         }
                     }
@@ -411,8 +412,8 @@ fun MetroBackgroundContainer(
                             lineTo(0.24f * width, 0.32f * height)
                             lineTo(0.24f * width, 0.50f * height)
                         }
-                        drawPath(path = p1, color = lineAccent, style = Stroke(width = 1f.dp.toPx()))
-                        drawCircle(color = lineAccent, radius = 3.5f.dp.toPx(), center = androidx.compose.ui.geometry.Offset(0.24f * width, 0.50f * height))
+                        drawPath(path = p1, color = gridColor, style = Stroke(width = 1f.dp.toPx()))
+                        drawCircle(color = gridColor, radius = 3.5f.dp.toPx(), center = androidx.compose.ui.geometry.Offset(0.24f * width, 0.50f * height))
 
                         val p2 = Path().apply {
                             moveTo(0.88f * width, 0.10f * height)
@@ -420,8 +421,8 @@ fun MetroBackgroundContainer(
                             lineTo(0.72f * width, 0.46f * height)
                             lineTo(0.55f * width, 0.46f * height)
                         }
-                        drawPath(path = p2, color = lineAccent, style = Stroke(width = 1f.dp.toPx()))
-                        drawCircle(color = lineAccent, radius = 3.5f.dp.toPx(), center = androidx.compose.ui.geometry.Offset(0.55f * width, 0.46f * height))
+                        drawPath(path = p2, color = gridColor, style = Stroke(width = 1f.dp.toPx()))
+                        drawCircle(color = gridColor, radius = 3.5f.dp.toPx(), center = androidx.compose.ui.geometry.Offset(0.55f * width, 0.46f * height))
 
                         val p3 = Path().apply {
                             moveTo(0.15f * width, 0.85f * height)
@@ -429,16 +430,16 @@ fun MetroBackgroundContainer(
                             lineTo(0.48f * width, 0.72f * height)
                             lineTo(0.65f * width, 0.72f * height)
                         }
-                        drawPath(path = p3, color = lineAccent, style = Stroke(width = 1f.dp.toPx()))
-                        drawCircle(color = lineAccent, radius = 3.5f.dp.toPx(), center = androidx.compose.ui.geometry.Offset(0.65f * width, 0.72f * height))
+                        drawPath(path = p3, color = gridColor, style = Stroke(width = 1f.dp.toPx()))
+                        drawCircle(color = gridColor, radius = 3.5f.dp.toPx(), center = androidx.compose.ui.geometry.Offset(0.65f * width, 0.72f * height))
 
                         val p4 = Path().apply {
                             moveTo(0.80f * width, 0.65f * height)
                             lineTo(0.80f * width, 0.80f * height)
                             lineTo(0.72f * width, 0.88f * height)
                         }
-                        drawPath(path = p4, color = lineAccent, style = Stroke(width = 1f.dp.toPx()))
-                        drawCircle(color = lineAccent, radius = 3.5f.dp.toPx(), center = androidx.compose.ui.geometry.Offset(0.72f * width, 0.88f * height))
+                        drawPath(path = p4, color = gridColor, style = Stroke(width = 1f.dp.toPx()))
+                        drawCircle(color = gridColor, radius = 3.5f.dp.toPx(), center = androidx.compose.ui.geometry.Offset(0.72f * width, 0.88f * height))
                     }
                     "mesh" -> {
                         // "mesh" (Mathematical Math wave lines visualization)
@@ -458,24 +459,13 @@ fun MetroBackgroundContainer(
                                     path.lineTo(px, py)
                                 }
                             }
-                            drawPath(path = path, color = lineAccent, style = Stroke(width = 0.75f.dp.toPx()))
+                            drawPath(path = path, color = gridColor, style = Stroke(width = 0.75f.dp.toPx()))
                         }
                     }
                 }
             }
         }
 
-        // Draw elegant orbital background sweep to break solid flatness
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.radialGradient(
-                        colors = sweepColors,
-                        radius = 2000f
-                    )
-                )
-        )
 
         content()
     }
@@ -502,7 +492,7 @@ fun MetroTile(
     val onTileSecondaryColor = if (isBgLight && transparency > 0.45f) Color.Black.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.7f)
     val tileBorderColor = if (isBgLight && transparency > 0.45f) Color.Black.copy(alpha = 0.15f) else Color.White.copy(alpha = 0.15f)
 
-    Card(
+    Box(
         modifier = modifier
             .padding(4.dp)
             .then(
@@ -512,16 +502,12 @@ fun MetroTile(
                     else -> Modifier.aspectRatio(1f)
                 }
             )
+            .background(tileBgColor)
+            .border(2.dp, tileBorderColor)
             .clickable(onClick = onClick)
-            .border(2.dp, tileBorderColor),
-        colors = CardDefaults.cardColors(containerColor = tileBgColor),
-        shape = androidx.compose.ui.graphics.RectangleShape // Metro standard 90-degree vector box
+            .padding(12.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp)
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
             val iconAlignment = when (sizeType) {
                 3 -> Alignment.TopStart
                 else -> Alignment.Center
@@ -711,7 +697,7 @@ fun PlaylistTrackItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (isCurrent) activeTrackBg else Color.Transparent)
+                .then(if (isCurrent) Modifier.background(activeTrackBg) else Modifier)
                 .clickable(onClick = onPlay)
                 .padding(horizontal = 12.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically

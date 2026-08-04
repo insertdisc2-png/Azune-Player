@@ -22,8 +22,8 @@ android {
     applicationId = "com.azune"
     minSdk = 24
     targetSdk = 36
-    versionCode = 2
-    versionName = "1.1"
+    versionCode = 3
+    versionName = "V 1.1 B1"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

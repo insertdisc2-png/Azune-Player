@@ -155,6 +155,7 @@ fun MetroPlayerApp(
     var activePivotIndex by remember { mutableStateOf(0) } // 0: Hub, 1: Music, 2: Playlists, 3: Artists, 4: Albums, 5: Settings
     var selectedPlaylistIdDetail by remember { mutableStateOf<Int?>(null) }
     var isFullscreenConsoleVisible by remember { mutableStateOf(false) }
+    val playerTransition = androidx.compose.animation.core.updateTransition(targetState = isFullscreenConsoleVisible, label = "player")
     var isLyricsExpanded by remember { mutableStateOf(false) }
     var isTileEditMode by remember { mutableStateOf(false) }
 
@@ -322,8 +323,9 @@ fun MetroPlayerApp(
             themeMode = settings.themeMode,
             modifier = Modifier.fillMaxSize()
         ) {
+            val isPlayerFullyVisible = playerTransition.currentState && playerTransition.targetState
             Scaffold(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().graphicsLayer { alpha = if (isPlayerFullyVisible) 0f else 1f },
                 containerColor = Color.Transparent
             ) { innerPadding ->
             Column(
@@ -598,9 +600,8 @@ fun MetroPlayerApp(
                     )
                 }
             }
+            }
         }
-    }
-
     // WELCOME OVERLAY SCREEN
     if (!settings.welcomeCompleted) {
         val isScanning by viewModel.isScanning.collectAsState()
@@ -833,8 +834,8 @@ fun MetroPlayerApp(
     }
 
     // SCREEN SHEET: Fullscreen Immersive Playback Zune/Metro console
-    AnimatedVisibility(
-        visible = isFullscreenConsoleVisible,
+    playerTransition.AnimatedVisibility(
+        visible = { it },
         enter = slideInVertically { height -> height } + fadeIn(),
         exit = slideOutVertically { height -> height } + fadeOut(),
         modifier = Modifier.fillMaxSize()
@@ -1112,7 +1113,7 @@ fun MainTilesHub(
                                 .scale(animatedScale)
                                 .animateItemPlacement()
                         ) {
-                            Card(
+                            Box(
                                 modifier = Modifier
                                     .padding(4.dp)
                                     .fillMaxWidth()
@@ -1123,11 +1124,10 @@ fun MainTilesHub(
                                             else -> Modifier.aspectRatio(1f)
                                         }
                                     )
-                                    .clickable { if (!isEditMode) onConsoleTrigger() }
+                                    .background(tileBg)
+                                    .border(2.dp, gridTileBorderColor)
                                     .dragToSwap("now_playing")
-                                    .border(2.dp, gridTileBorderColor),
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp),
-                                colors = CardDefaults.cardColors(containerColor = tileBg)
+                                    .clickable { if (!isEditMode) onConsoleTrigger() }
                             ) {
                                 when (sizeType) {
                                     1 -> {
@@ -1946,45 +1946,36 @@ fun MyMusicLibPanel(
     // Filter and Sort tracks dynamically (Extremely optimized non-stuttering configuration!)
     val sortedTracks = androidx.compose.runtime.remember(allSongs, query, category, sortBy, isAscending, settings.favoriteTrackIds) {
         val favIds = settings.favoriteTrackIds.split(",").filter { it.isNotEmpty() }.toSet()
-        val filtered = allSongs.filter { track ->
-            val matchesQuery = track.title.lowercase().contains(query.lowercase()) ||
-                    track.artist.lowercase().contains(query.lowercase())
-            val matchesCat = when {
-                category == "favorites" -> track.id in favIds
-                category == "all" -> true
-                category.startsWith("genre_") -> {
-                    val filterGenre = category.removePrefix("genre_")
-                    track.genre.trim().lowercase() == filterGenre.lowercase()
+        val cleanQuery = query.trim()
+        val hasQuery = cleanQuery.isNotEmpty()
+        val filtered = if (!hasQuery && category == "all") {
+            allSongs
+        } else {
+            allSongs.filter { track ->
+                val matchesQuery = !hasQuery ||
+                        track.title.contains(cleanQuery, ignoreCase = true) ||
+                        track.artist.contains(cleanQuery, ignoreCase = true)
+                val matchesCat = when {
+                    category == "favorites" -> track.id in favIds
+                    category == "all" -> true
+                    category.startsWith("genre_") -> {
+                        val filterGenre = category.removePrefix("genre_")
+                        track.genre.trim().equals(filterGenre, ignoreCase = true)
+                    }
+                    else -> true
                 }
-                else -> true
+                matchesQuery && matchesCat
             }
-            matchesQuery && matchesCat
         }
 
-        val comparator = Comparator<Track> { t1, t2 ->
-            val key1 = when (sortBy) {
-                "A-Z" -> t1.title.lowercase()
-                "Z-A" -> t1.title.lowercase()
-                "Artists" -> t1.artist.lowercase()
-                "Album" -> t1.album.ifEmpty { "unknown album" }.lowercase()
-                "Date Added" -> t1.id.lowercase()
-                "Date Updated" -> (t1.artist + t1.title).lowercase()
-                else -> t1.title.lowercase()
-            }
-            val key2 = when (sortBy) {
-                "A-Z" -> t2.title.lowercase()
-                "Z-A" -> t2.title.lowercase()
-                "Artists" -> t2.artist.lowercase()
-                "Album" -> t2.album.ifEmpty { "unknown album" }.lowercase()
-                "Date Added" -> t2.id.lowercase()
-                "Date Updated" -> (t2.artist + t2.title).lowercase()
-                else -> t2.title.lowercase()
-            }
-            if (sortBy == "Z-A") {
-                key2.compareTo(key1)
-            } else {
-                key1.compareTo(key2)
-            }
+        val comparator: Comparator<Track> = when (sortBy) {
+            "A-Z" -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.title }
+            "Z-A" -> compareByDescending(String.CASE_INSENSITIVE_ORDER) { it.title }
+            "Artists" -> compareBy<Track, String>(String.CASE_INSENSITIVE_ORDER) { it.artist }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }
+            "Album" -> compareBy<Track, String>(String.CASE_INSENSITIVE_ORDER) { it.album.ifEmpty { "unknown album" } }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.title }
+            "Date Added" -> compareBy { it.id }
+            "Date Updated" -> compareBy<Track, String>(String.CASE_INSENSITIVE_ORDER) { it.artist + it.title }
+            else -> compareBy(String.CASE_INSENSITIVE_ORDER) { it.title }
         }
         val sorted = filtered.sortedWith(comparator)
         if (!isAscending) sorted.reversed() else sorted
@@ -2372,23 +2363,20 @@ fun ArtistsPanel(
     val textPrimaryColor = if (settings.themeMode == "light") Color.Black else Color.White
     val textSecondaryColor = if (settings.themeMode == "light") Color.Black.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f)
 
-    // Group songs by artist name, splitting on collaborative separators
+    // Group songs by artist name, splitting on collaborative separators efficiently
     val groupedByArtist = remember(allSongs, settings.artistSeparators) {
         val separators = settings.artistSeparators.split(";")
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .ifEmpty { listOf("/", ",", "feat.", "ft.", "&", "and") }
 
+        val regexPattern = Regex("(?i)(" + separators.joinToString("|") { Regex.escape(it) } + ")")
         val map = java.util.TreeMap<String, MutableList<Track>>(String.CASE_INSENSITIVE_ORDER)
         
         allSongs.forEach { song ->
-            var list = listOf(song.artist)
-            separators.forEach { sep ->
-                list = list.flatMap { sub -> 
-                    sub.split(Regex("(?i)${Regex.escape(sep)}"))
-                }
-            }
-            val individualArtists = list.map { it.trim() }.filter { it.isNotEmpty() }
+            val individualArtists = song.artist.split(regexPattern)
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
             val finalArtists = if (individualArtists.isEmpty()) listOf(song.artist) else individualArtists
             
             finalArtists.forEach { artist ->
@@ -2418,11 +2406,11 @@ fun ArtistsPanel(
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             groupedByArtist.forEach { (artistName, songs) ->
-                item {
+                item(key = "artist_hdr_$artistName", contentType = "artist_header") {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp, horizontal = 4.dp)
+                            .padding(top = 16.dp, bottom = 4.dp, start = 4.dp, end = 4.dp)
                     ) {
                         Text(
                             text = artistName.lowercase(),
@@ -2437,40 +2425,45 @@ fun ArtistsPanel(
                             color = textSecondaryColor,
                             fontSize = 11.sp
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        songs.forEach { song ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onTrackPlay(song, songs) }
-                                    .padding(vertical = 8.dp, horizontal = 12.dp)
-                                    .background(Color.White.copy(alpha = 0.02f)),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.MusicNote,
-                                    contentDescription = null,
-                                    tint = textSecondaryColor,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Text(
-                                        text = song.title,
-                                        color = textPrimaryColor,
-                                        fontSize = 14.sp
-                                    )
-                                    Text(
-                                        text = if (song.album.isNotEmpty()) song.album.lowercase() else "unknown album",
-                                        color = textSecondaryColor,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                            }
+                    }
+                }
+                items(
+                    items = songs,
+                    key = { song -> "artist_${artistName}_${song.id}" },
+                    contentType = { "artist_song" }
+                ) { song ->
+                    val playAction = remember(song.id, songs) { { onTrackPlay(song, songs) } }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = playAction)
+                            .padding(vertical = 8.dp, horizontal = 12.dp)
+                            .background(Color.White.copy(alpha = 0.02f)),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = null,
+                            tint = textSecondaryColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = song.title,
+                                color = textPrimaryColor,
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = if (song.album.isNotEmpty()) song.album.lowercase() else "unknown album",
+                                color = textSecondaryColor,
+                                fontSize = 11.sp
+                            )
                         }
                     }
-                    Divider(color = textPrimaryColor.copy(alpha = 0.08f))
+                }
+                item(key = "artist_div_$artistName", contentType = "divider") {
+                    Divider(color = textPrimaryColor.copy(alpha = 0.08f), modifier = Modifier.padding(top = 8.dp))
                 }
             }
         }
@@ -2511,100 +2504,99 @@ fun AlbumsPanel(
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             groupedByAlbum.forEach { (albumName, songs) ->
-                item {
-                    val albumArtist = songs.firstOrNull()?.artist ?: "Unknown Artist"
-                    Column(
+                val albumArtist = songs.firstOrNull()?.artist ?: "Unknown Artist"
+                item(key = "album_hdr_$albumName", contentType = "album_header") {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp, horizontal = 4.dp)
+                            .padding(top = 16.dp, bottom = 8.dp, start = 4.dp, end = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            // Pseudo-CD album visual tile
-                            if (settings.enableCoverArt && songs.firstOrNull() != null) {
-                                com.example.ui.components.TrackCoverImage(
-                                    track = songs.first(),
-                                    resolution = settings.coverArtResolution,
-                                    modifier = Modifier
-                                        .size(64.dp)
-                                        .border(1.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp)),
-                                    fallbackSymbol = "💿",
-                                    symbolFontSize = 32.sp,
-                                    themeAccentColor = themeAccentColor,
-                                    isLight = (settings.themeMode == "light")
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .size(64.dp)
-                                        .background(themeAccentColor.copy(alpha = 0.15f))
-                                        .border(1.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Album,
-                                        contentDescription = null,
-                                        tint = themeAccentColor,
-                                        modifier = Modifier.size(36.dp)
-                                    )
-                                }
-                            }
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = albumName.lowercase(),
-                                    color = if (settings.themeMode == "light") Color.Black else themeAccentColor,
-                                    fontFamily = getMetroFontFamily(settings.fontFamily),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp,
-                                    letterSpacing = (-0.5).sp
-                                )
-                                Text(
-                                    text = "by ${albumArtist.lowercase()}",
-                                    color = textPrimaryColor,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = "${songs.size} " + if (songs.size > 1) "tracks" else "track",
-                                    color = textSecondaryColor,
-                                    fontSize = 11.sp
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Subtracks
-                        songs.forEach { song ->
-                            Row(
+                        // Album visual tile
+                        if (settings.enableCoverArt && songs.firstOrNull() != null) {
+                            com.example.ui.components.TrackCoverImage(
+                                track = songs.first(),
+                                resolution = settings.coverArtResolution,
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onTrackPlay(song, songs) }
-                                    .padding(vertical = 8.dp, horizontal = 12.dp)
-                                    .background(Color.White.copy(alpha = 0.02f)),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .size(64.dp)
+                                    .border(1.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp)),
+                                fallbackSymbol = "💿",
+                                symbolFontSize = 32.sp,
+                                themeAccentColor = themeAccentColor,
+                                isLight = (settings.themeMode == "light")
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .background(themeAccentColor.copy(alpha = 0.15f))
+                                    .border(1.dp, themeAccentColor, androidx.compose.foundation.shape.RoundedCornerShape(0.dp)),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.MusicNote,
+                                    imageVector = Icons.Default.Album,
                                     contentDescription = null,
-                                    tint = textSecondaryColor,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = song.title,
-                                    color = textPrimaryColor,
-                                    fontSize = 13.sp,
-                                    modifier = Modifier.weight(1f)
+                                    tint = themeAccentColor,
+                                    modifier = Modifier.size(36.dp)
                                 )
                             }
                         }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = albumName.lowercase(),
+                                color = if (settings.themeMode == "light") Color.Black else themeAccentColor,
+                                fontFamily = getMetroFontFamily(settings.fontFamily),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                letterSpacing = (-0.5).sp
+                            )
+                            Text(
+                                text = "by ${albumArtist.lowercase()}",
+                                color = textPrimaryColor,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "${songs.size} " + if (songs.size > 1) "tracks" else "track",
+                                color = textSecondaryColor,
+                                fontSize = 11.sp
+                            )
+                        }
                     }
-                    Divider(color = textPrimaryColor.copy(alpha = 0.08f))
+                }
+                items(
+                    items = songs,
+                    key = { song -> "album_${albumName}_${song.id}" },
+                    contentType = { "album_song" }
+                ) { song ->
+                    val playAction = remember(song.id, songs) { { onTrackPlay(song, songs) } }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = playAction)
+                            .padding(vertical = 8.dp, horizontal = 12.dp)
+                            .background(Color.White.copy(alpha = 0.02f)),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = null,
+                            tint = textSecondaryColor,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = song.title,
+                            color = textPrimaryColor,
+                            fontSize = 13.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                item(key = "album_div_$albumName", contentType = "divider") {
+                    Divider(color = textPrimaryColor.copy(alpha = 0.08f), modifier = Modifier.padding(top = 8.dp))
                 }
             }
         }
@@ -3981,9 +3973,10 @@ fun SettingsPanel(
                     )
                     Text(
                         text = "• 100% Offline Ops: All scans, playlists, and audio synthetics operate solely inside your physical device.\n" +
-                               "• 0% Telemetry: We do not collect, transmit, or process any metadata, audio files, or personal statistics.\n" +
+                               "• Local Crash Diagnostics: In the event of a crash scene, essential technical information is captured and stored strictly on local device storage.\n" +
+                               "• 0% Telemetry: We do not collect, transmit, or process any metadata, audio files, or personal statistics to remote servers.\n" +
                                "• Zero Advertisements: The app is completely ad-free with no billing, internet logins, or subscriptions.\n" +
-                               "• Transparent Permissions: Storage access for music file scanning and Notification access for status bar playback controls. We never collect or transmit your data.",
+                               "• Transparent Permissions: Storage access for music file scanning and Notification access for status bar playback controls.",
                         color = textSecondaryColor,
                         fontSize = 12.sp,
                         lineHeight = 18.sp
@@ -4305,7 +4298,7 @@ fun SettingsPanel(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            text = "Last updated: June 2026",
+                            text = "Last updated: August 2026",
                             color = textSecondaryColor,
                             fontSize = 11.sp,
                             fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
@@ -4332,6 +4325,19 @@ fun SettingsPanel(
                         )
                         Text(
                             text = "All core functionalities of Azune Music Player, including music scanning, playlist compilation, track statistics, preference caches, and synthetic sound generation, run entirely on your physical device. We do not use, integrate, or rely on external cloud databases, and your personal data remains completely local to your device.",
+                            color = textSecondaryColor,
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp
+                        )
+
+                        Text(
+                            text = "Crash Scene Data Collection & Local Storage",
+                            color = textPrimaryColor,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "In the event of an unexpected application crash, essential diagnostic information (such as error stack traces and application state at the crash scene) is captured solely to maintain app stability and assist in troubleshooting. This crash data strictly collects essential non-personally identifiable technical information and is saved exclusively on local device storage. Crash logs are never automatically uploaded or transmitted to external servers or third-party tracking services.",
                             color = textSecondaryColor,
                             fontSize = 12.sp,
                             lineHeight = 18.sp
@@ -4657,7 +4663,10 @@ fun PlaylistDetailView(
             )
 
             // Dynamic dropdown file selection helper inside playlist
-            val candidateTracks = allSongsList.filter { cand -> playlistTracks.none { it.id == cand.id } }
+            val candidateTracks = remember(allSongsList, playlistTracks) {
+                val existingIds = playlistTracks.mapTo(HashSet()) { it.id }
+                allSongsList.filter { it.id !in existingIds }
+            }
 
             if (candidateTracks.isEmpty()) {
                 Text(
@@ -4675,7 +4684,7 @@ fun PlaylistDetailView(
                         .border(1.dp, textPrimaryColor.copy(alpha = 0.1f)),
                     contentPadding = PaddingValues(8.dp)
                 ) {
-                    items(candidateTracks) { track ->
+                    items(items = candidateTracks, key = { it.id }) { track ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -4728,7 +4737,7 @@ fun PlaylistDetailView(
             }
         } else {
             LazyColumn(modifier = Modifier.weight(1f)) {
-                items(playlistTracks) { track ->
+                items(items = playlistTracks, key = { it.id }) { track ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -4805,7 +4814,7 @@ fun MiniPlaybackStrip(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp)
+            .padding(bottom = 6.dp)
             .background(containerBgColor)
             .pointerInput(Unit) {
                 detectDragGestures(
@@ -5121,6 +5130,7 @@ fun FullscreenPlaybackConsole(
         modifier = Modifier
             .fillMaxSize()
             .background(canvasBg) // SOLID, NO TRANSPARENCY
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(horizontal = 24.dp, vertical = 12.dp)
             .pointerInput(Unit) {
                 detectDragGestures(

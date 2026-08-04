@@ -29,16 +29,53 @@ class MetroPlayerEngine(private val context: Context) {
 
         if (track.isSynth) {
             synthEngine.startPlaying(track.synthType)
+            isPrepared = true
         } else {
             try {
                 mediaPlayer = MediaPlayer().apply {
-                    val file = java.io.File(track.path)
-                    if (track.path.startsWith("/") && file.exists() && file.isFile) {
-                        val fis = java.io.FileInputStream(file)
-                        setDataSource(fis.fd)
-                        fis.close()
-                    } else {
-                        setDataSource(context, Uri.parse(track.path))
+                    val uriString = if (track.id.startsWith("local_")) {
+                        val idLong = track.id.removePrefix("local_").toLongOrNull()
+                        if (idLong != null) {
+                            android.content.ContentUris.withAppendedId(
+                                android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                                idLong
+                            ).toString()
+                        } else track.path
+                    } else track.path
+
+                    var dataSourceSet = false
+                    if (uriString.startsWith("content://")) {
+                        try {
+                            val uri = Uri.parse(uriString)
+                            context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+                                setDataSource(pfd.fileDescriptor)
+                                dataSourceSet = true
+                            }
+                        } catch (_: Exception) {}
+                        if (!dataSourceSet) {
+                            try {
+                                setDataSource(context, Uri.parse(uriString))
+                                dataSourceSet = true
+                            } catch (_: Exception) {}
+                        }
+                    }
+
+                    if (!dataSourceSet) {
+                        val file = java.io.File(track.path)
+                        if (file.exists() && file.isFile) {
+                            try {
+                                java.io.FileInputStream(file).use { fis ->
+                                    setDataSource(fis.fd)
+                                    dataSourceSet = true
+                                }
+                            } catch (_: Exception) {
+                                setDataSource(track.path)
+                                dataSourceSet = true
+                            }
+                        } else {
+                            setDataSource(context, Uri.parse(track.path))
+                            dataSourceSet = true
+                        }
                     }
                     prepare()
                     isPrepared = true
@@ -65,8 +102,6 @@ class MetroPlayerEngine(private val context: Context) {
             } catch (e: Exception) {
                 e.printStackTrace()
                 isPrepared = false
-                // If local playback fails, fallback or trigger completion to handle gracefully
-                onCompletionListener?.invoke()
             }
         }
     }

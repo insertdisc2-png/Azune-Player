@@ -51,6 +51,18 @@ class MusicNotificationService : Service() {
                     override fun onStop() {
                         onNotificationAction?.invoke(ACTION_STOP)
                     }
+
+                    override fun onSeekTo(pos: Long) {
+                        onNotificationSeek?.invoke(pos)
+                    }
+
+                    override fun onFastForward() {
+                        onNotificationSeekDelta?.invoke(10000L)
+                    }
+
+                    override fun onRewind() {
+                        onNotificationSeekDelta?.invoke(-10000L)
+                    }
                 })
                 isActive = true
             }
@@ -107,7 +119,8 @@ class MusicNotificationService : Service() {
             ACTION_PREVIOUS -> {
                 onNotificationAction?.invoke(ACTION_PREVIOUS)
             }
-            ACTION_STOP -> {
+            ACTION_STOP, ACTION_DISMISS -> {
+                onNotificationAction?.invoke(ACTION_STOP)
                 mediaSession?.isActive = false
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
@@ -128,6 +141,7 @@ class MusicNotificationService : Service() {
         val session = mediaSession ?: return
 
         val state = if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
+        val speed = if (isPlaying) 1.0f else 0.0f
         val playbackState = PlaybackStateCompat.Builder()
             .setActions(
                 PlaybackStateCompat.ACTION_PLAY or
@@ -136,25 +150,15 @@ class MusicNotificationService : Service() {
                 PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
                 PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or
                 PlaybackStateCompat.ACTION_STOP or
-                PlaybackStateCompat.ACTION_SEEK_TO
+                PlaybackStateCompat.ACTION_SEEK_TO or
+                PlaybackStateCompat.ACTION_FAST_FORWARD or
+                PlaybackStateCompat.ACTION_REWIND
             )
-            .setState(state, position, if (isPlaying) 1.0f else 0.0f)
+            .setState(state, position, speed, android.os.SystemClock.elapsedRealtime())
             .build()
         session.setPlaybackState(playbackState)
 
-        var albumArtBitmap = try {
-            if (trackPath.isNotEmpty() && !trackPath.startsWith("synth://")) {
-                val mmr = android.media.MediaMetadataRetriever()
-                mmr.setDataSource(trackPath)
-                val artBytes = mmr.embeddedPicture
-                mmr.release()
-                if (artBytes != null) {
-                    BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size)
-                } else null
-            } else null
-        } catch (_: Exception) {
-            null
-        }
+        val albumArtBitmap: android.graphics.Bitmap? = null
 
         val metadataBuilder = MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
@@ -231,19 +235,7 @@ class MusicNotificationService : Service() {
 
         val playPauseTitle = if (isPlaying) "Pause" else "Play"
 
-        var albumArtBitmap = try {
-            if (trackPath.isNotEmpty() && !trackPath.startsWith("synth://")) {
-                val mmr = android.media.MediaMetadataRetriever()
-                mmr.setDataSource(trackPath)
-                val artBytes = mmr.embeddedPicture
-                mmr.release()
-                if (artBytes != null) {
-                    BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size)
-                } else null
-            } else null
-        } catch (_: Exception) {
-            null
-        }
+        val albumArtBitmap: android.graphics.Bitmap? = null
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
@@ -251,7 +243,7 @@ class MusicNotificationService : Service() {
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setLargeIcon(albumArtBitmap)
             .setContentIntent(pendingOpenApp)
-            .setOngoing(isPlaying)
+            .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(android.R.drawable.ic_media_previous, "Previous", pendingPrev)
@@ -288,6 +280,16 @@ class MusicNotificationService : Service() {
         }
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        try {
+            onNotificationAction?.invoke(ACTION_STOP)
+            mediaSession?.isActive = false
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        } catch (_: Exception) {}
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         try {
@@ -306,6 +308,7 @@ class MusicNotificationService : Service() {
         const val ACTION_NEXT = "com.example.service.ACTION_NEXT"
         const val ACTION_PREVIOUS = "com.example.service.ACTION_PREVIOUS"
         const val ACTION_STOP = "com.example.service.ACTION_STOP"
+        const val ACTION_DISMISS = "com.example.service.ACTION_DISMISS"
 
         const val EXTRA_TITLE = "extra_title"
         const val EXTRA_ARTIST = "extra_artist"
@@ -315,6 +318,8 @@ class MusicNotificationService : Service() {
         const val EXTRA_POSITION = "extra_position"
 
         var onNotificationAction: ((String) -> Unit)? = null
+        var onNotificationSeek: ((Long) -> Unit)? = null
+        var onNotificationSeekDelta: ((Long) -> Unit)? = null
 
         fun updateNotification(
             context: Context,
@@ -338,11 +343,7 @@ class MusicNotificationService : Service() {
             }
 
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(intent)
-                } else {
-                    context.startService(intent)
-                }
+                androidx.core.content.ContextCompat.startForegroundService(context, intent)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -353,7 +354,7 @@ class MusicNotificationService : Service() {
                 action = ACTION_STOP
             }
             try {
-                context.startService(intent)
+                context.stopService(intent)
             } catch (_: Exception) {}
         }
     }
