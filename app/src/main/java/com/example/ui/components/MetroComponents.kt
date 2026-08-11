@@ -41,12 +41,29 @@ import com.example.data.model.CoverArtCache
 import kotlin.math.sin
 
 // Local Font configuration for Inter loaded offline from resources
-val InterFontFamily = FontFamily.SansSerif
+val InterFontFamily: FontFamily
+    get() = safeInterFontFamily ?: FontFamily.SansSerif
 
 private var safeInterFontFamily: FontFamily? = null
 
 fun getSafeInterFontFamily(context: android.content.Context): FontFamily {
-    return FontFamily.SansSerif
+    safeInterFontFamily?.let { return it }
+    return try {
+        // Pre-warm resources using ResourcesCompat to ensure typeface is cached safely
+        androidx.core.content.res.ResourcesCompat.getFont(context, com.example.R.font.inter_regular)
+        
+        val family = FontFamily(
+            androidx.compose.ui.text.font.Font(com.example.R.font.inter_light, weight = androidx.compose.ui.text.font.FontWeight.Light),
+            androidx.compose.ui.text.font.Font(com.example.R.font.inter_regular, weight = androidx.compose.ui.text.font.FontWeight.Normal),
+            androidx.compose.ui.text.font.Font(com.example.R.font.inter_medium, weight = androidx.compose.ui.text.font.FontWeight.Medium),
+            androidx.compose.ui.text.font.Font(com.example.R.font.inter_semibold, weight = androidx.compose.ui.text.font.FontWeight.SemiBold),
+            androidx.compose.ui.text.font.Font(com.example.R.font.inter_bold, weight = androidx.compose.ui.text.font.FontWeight.Bold)
+        )
+        safeInterFontFamily = family
+        family
+    } catch (e: Throwable) {
+        FontFamily.SansSerif
+    }
 }
 
 private fun isValidTtfHeader(file: java.io.File): Boolean {

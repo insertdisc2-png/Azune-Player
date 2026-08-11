@@ -130,6 +130,47 @@ class MusicNotificationService : Service() {
         return START_NOT_STICKY
     }
 
+    private fun getAlbumArt(path: String): android.graphics.Bitmap? {
+        if (path.isEmpty()) return null
+        val retriever = android.media.MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(path)
+            val artBytes = retriever.embeddedPicture
+            if (artBytes != null) {
+                val options = android.graphics.BitmapFactory.Options()
+                options.inJustDecodeBounds = true
+                android.graphics.BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size, options)
+                
+                val maxSize = 512
+                var scale = 1
+                while (options.outWidth / scale / 2 >= maxSize || options.outHeight / scale / 2 >= maxSize) {
+                    scale *= 2
+                }
+                
+                val decodeOptions = android.graphics.BitmapFactory.Options()
+                decodeOptions.inSampleSize = scale
+                val bitmap = android.graphics.BitmapFactory.decodeByteArray(artBytes, 0, artBytes.size, decodeOptions)
+                
+                if (bitmap != null && (bitmap.width > maxSize || bitmap.height > maxSize)) {
+                    val ratio = Math.min(maxSize.toFloat() / bitmap.width, maxSize.toFloat() / bitmap.height)
+                    val width = Math.max(1, Math.round(ratio * bitmap.width))
+                    val height = Math.max(1, Math.round(ratio * bitmap.height))
+                    android.graphics.Bitmap.createScaledBitmap(bitmap, width, height, true)
+                } else {
+                    bitmap
+                }
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        } finally {
+            try {
+                retriever.release()
+            } catch (e: Exception) {}
+        }
+    }
+
     private fun updateMediaSession(
         title: String,
         artist: String,
@@ -158,7 +199,7 @@ class MusicNotificationService : Service() {
             .build()
         session.setPlaybackState(playbackState)
 
-        val albumArtBitmap: android.graphics.Bitmap? = null
+        val albumArtBitmap = getAlbumArt(trackPath)
 
         val metadataBuilder = MediaMetadataCompat.Builder()
             .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
@@ -235,7 +276,7 @@ class MusicNotificationService : Service() {
 
         val playPauseTitle = if (isPlaying) "Pause" else "Play"
 
-        val albumArtBitmap: android.graphics.Bitmap? = null
+        val albumArtBitmap = getAlbumArt(trackPath)
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)

@@ -2695,7 +2695,7 @@ fun SettingsPanel(
         contentPadding = PaddingValues(bottom = 32.dp)
     ) {
         // Group 1: Appearance & Style
-        item {
+        
             Text(
                 text = "Appearance & Style",
                 color = themeAccentColor,
@@ -2708,7 +2708,7 @@ fun SettingsPanel(
         }
 
         // Row 1: Theme selection
-        item {
+        
             SettingsListRow(
                 title = "Theme Mode",
                 description = "Choose between Dark mode, Amoled dark, Aero Light, or Follow System. Current: $currentThemeLabel",
@@ -2721,7 +2721,7 @@ fun SettingsPanel(
         }
 
         // Row 2: Accent selection
-        item {
+        
             SettingsListRow(
                 title = "Accent Color",
                 description = "Adjust dynamic highlights on live tiles. Current: ${getAccentColorName(settings.accentColorHex)}",
@@ -2734,7 +2734,7 @@ fun SettingsPanel(
         }
 
         // Row 3: Font Adjustment
-        item {
+        
             SettingsListRow(
                 title = "App Font Family",
                 description = "Configure text and typography header layout styles. Current: $currentFontLabel",
@@ -2747,7 +2747,7 @@ fun SettingsPanel(
         }
 
         // Row 4: Transparency settings
-        item {
+        
             SettingsListRow(
                 title = "Acrylic Transparency",
                 description = "Set backplate glass transparency depth scaling. Current: ${(settings.backgroundTransparency * 100).toInt()}%",
@@ -2760,7 +2760,7 @@ fun SettingsPanel(
         }
 
         // Row 5: Canvas grids settings
-        item {
+        
             SettingsListRow(
                 title = "App Background",
                 description = "Choose dynamic blueprint designs, constellations, micro-circuits or raw vector meshes. Current: ${
@@ -2784,7 +2784,7 @@ fun SettingsPanel(
 
         // Background Opacity/Intensity setting - only shown when Custom Upload is active
         if (settings.backgroundStyle == "upload") {
-            item {
+            
                 SettingsListRow(
                     title = if (isLight) "Aero Light BG Intensity" else "Dark mode BG Intensity",
                     description = "Adjust opacity and visibility of the custom background. Current: ${(settings.appBackgroundOpacity * 100).toInt()}%",
@@ -2798,7 +2798,7 @@ fun SettingsPanel(
         }
 
         // Group: Player Personalization
-        item {
+        
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Player Screen Customization",
@@ -2810,7 +2810,7 @@ fun SettingsPanel(
             Divider(color = textPrimaryColor.copy(alpha = 0.15f), modifier = Modifier.padding(vertical = 8.dp))
         }
 
-        item {
+        
             val currentStyleLabel = when (settings.playerBackgroundStyle) {
                 "dark" -> "Dark Mode Backdrop"
                 "light" -> "Light Mode Backdrop"
@@ -2829,7 +2829,7 @@ fun SettingsPanel(
         }
 
         if (settings.playerBackgroundStyle == "cover") {
-            item {
+            
                 SettingsListRow(
                     title = "Cover Color Intensity",
                     description = "Choose color projection intensity on player screen. Current: ${(settings.playerBackgroundIntensity * 100).toInt()}%",
@@ -2843,7 +2843,7 @@ fun SettingsPanel(
         }
 
         // Group: Cover Art Settings
-        item {
+        
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Live Tiles & Cover Art",
@@ -2855,7 +2855,7 @@ fun SettingsPanel(
             Divider(color = textPrimaryColor.copy(alpha = 0.15f), modifier = Modifier.padding(vertical = 8.dp))
         }
 
-        item {
+        
             SettingsToggleRow(
                 title = "Remember Last Played Song",
                 description = "Automatically load and cue up the last played track and position on app restart.",
@@ -2868,7 +2868,7 @@ fun SettingsPanel(
             )
         }
 
-        item {
+        
             SettingsToggleRow(
                 title = "Enable Embedded Cover Art",
                 description = "Extract and display embedded covers inside player screens and tiles.",
@@ -2882,7 +2882,7 @@ fun SettingsPanel(
         }
 
         if (settings.enableCoverArt) {
-            item {
+            
                 SettingsToggleRow(
                     title = "Show Cover Art in Song Lists",
                     description = "Optionally render tiny cover art preview indicators inside song lists.",
@@ -2897,7 +2897,7 @@ fun SettingsPanel(
 
 
 
-            item {
+            
                 val currentResLabel = when (settings.coverArtResolution) {
                     "low" -> "Low (Fast / Sampled 160px)"
                     "medium" -> "Medium Balance (Sampled 350px)"
@@ -2917,7 +2917,7 @@ fun SettingsPanel(
         }
 
         // Group: Lyrics Settings
-        item {
+        
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Lyrics Display",
@@ -2930,7 +2930,7 @@ fun SettingsPanel(
         }
 
         // Toggle Preview Lyrics
-        item {
+        
             SettingsToggleRow(
                 title = "Preview Lyrics in Player",
                 description = "Show lyric previews directly below playback controls.",
@@ -2945,7 +2945,7 @@ fun SettingsPanel(
 
         if (true) {
             // Lyrics Font Family selector
-            item {
+            
                 SettingsListRow(
                     title = "Lyrics Font Family",
                     description = "Change the font style of player lyric lines. Current: ${settings.lyricsFontFamily}",
@@ -2957,7 +2957,7 @@ fun SettingsPanel(
                 )
             }
             // Lyrics Line Spacing selector
-            item {
+            
                 SettingsListRow(
                     title = "Lyrics Line Spacing",
                     description = "Configure padding and spacing between lyric lines. Current: ${settings.lyricsSpacing}",
@@ -2969,7 +2969,7 @@ fun SettingsPanel(
                 )
             }
             // Lyrics Text Alignment selector
-            item {
+            
                 SettingsListRow(
                     title = "Lyrics Text Alignment",
                     description = "Choose alignment: Left, Center, Right, or Follow format. Current: ${settings.lyricsAlignment}",
@@ -2981,7 +2981,7 @@ fun SettingsPanel(
                 )
             }
             // Lyrics Font Size selector
-            item {
+            
                 SettingsListRow(
                     title = "Lyrics Font Size",
                     description = "Change the lyrics preview text size in player. Current: ${settings.lyricsFontSize}",
@@ -2995,7 +2995,7 @@ fun SettingsPanel(
         }
 
         // Group 2: Storage & Scanning
-        item {
+        
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Library Storage & Scanners",
@@ -3008,7 +3008,7 @@ fun SettingsPanel(
         }
 
         // Row 6: Folder select
-        item {
+        
             SettingsListRow(
                 title = "Select Folder",
                 description = "Select local folders on device to read and load music tracks. Current: $currentFolderLabel",
@@ -3021,7 +3021,7 @@ fun SettingsPanel(
         }
 
         // Toggle Show Placeholder / Synth Songs
-        item {
+        
             SettingsToggleRow(
                 title = "Add 5 Placeholder Songs",
                 description = "Enable 5 built-in procedural ambient synth tracks to preview music if your local device folder is empty.",
@@ -3035,7 +3035,7 @@ fun SettingsPanel(
         }
 
         // Row 6b: SCAN MUSIC option
-        item {
+        
             var showScanToast by remember { mutableStateOf(false) }
             val coroutineScope = rememberCoroutineScope()
             SettingsListRow(
@@ -3074,7 +3074,7 @@ fun SettingsPanel(
         }
 
         // Row 6c: RE-RUN PERMISSION AND MUSIC SYNC WIZARD
-        item {
+        
             SettingsListRow(
                 title = "RE-RUN PERMISSION AND MUSIC SYNC",
                 description = "Re-open the initial setup wizard to grant notification access and scan your offline music.",
@@ -3088,7 +3088,7 @@ fun SettingsPanel(
 
 
         // Group: Cache & Storage
-        item {
+        
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Cache & Storage",
@@ -3101,7 +3101,7 @@ fun SettingsPanel(
         }
 
         // Cache cleanup row
-        item {
+        
             var showCachePurgeToast by remember { mutableStateOf(false) }
             var cacheSize by remember { mutableStateOf(com.example.data.model.CoverArtCache.getCacheSize()) }
             var emptyKeysSize by remember { mutableStateOf(com.example.data.model.CoverArtCache.getNoCoverCount()) }
@@ -3166,7 +3166,7 @@ fun SettingsPanel(
 
 
         // Group: Layout Customization
-        item {
+        
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Layout & Customization",
@@ -3179,7 +3179,7 @@ fun SettingsPanel(
         }
 
         // Hub Tiles visible toggle checkboxes
-        item {
+        
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -3252,7 +3252,7 @@ fun SettingsPanel(
         }
 
         // Cover Art Border Thickness Select list row
-        item {
+        
             SettingsListRow(
                 title = "Cover Art Border Thickness",
                 description = "Customize the width and styling of cover art borders. Current: ${settings.coverArtBorderThickness}",
@@ -3265,7 +3265,7 @@ fun SettingsPanel(
         }
 
         // Artist separators custom layout
-        item {
+        
             SettingsListRow(
                 title = "Artist Name Separators",
                 description = "Configure semicolon-separated tokens (e.g., '/' or 'feat.') to split joint collaborations. Current: ${settings.artistSeparators}",
@@ -3278,7 +3278,7 @@ fun SettingsPanel(
         }
 
         // Group 3: About App
-        item {
+        
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "About",
@@ -3291,7 +3291,7 @@ fun SettingsPanel(
         }
 
         // Row 7: Info card info clicked
-        item {
+        
             SettingsListRow(
                 title = "About Azune",
                 description = "Click to view info",
@@ -4096,7 +4096,7 @@ fun SettingsPanel(
                         ) {
                             // Back / Up navigation folder row
                             if (currentExplorerDir.absolutePath != "/storage/emulated/0") {
-                                item {
+                                
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -5307,7 +5307,7 @@ fun FullscreenPlaybackConsole(
                     horizontalAlignment = lyricsHorizontalAlignment
                 ) {
                     if (lyricLines.isEmpty()) {
-                        item {
+                        
                             Box(
                                 modifier = Modifier.fillParentMaxSize(),
                                 contentAlignment = Alignment.Center
@@ -5732,7 +5732,7 @@ fun FullscreenPlaybackConsole(
                         userScrollEnabled = false
                     ) {
                         if (lyricLines.isEmpty()) {
-                            item {
+                            
                                 Box(
                                     modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                                     contentAlignment = Alignment.Center
@@ -5917,7 +5917,7 @@ fun FullscreenPlaybackConsole(
                             contentPadding = PaddingValues(bottom = 24.dp)
                         ) {
                             // Pin Track setting option item
-                            item {
+                            
                                 Column(modifier = Modifier.fillMaxWidth()) {
                                     Text("PIN TRACK TO HUB HOME", color = textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -5955,7 +5955,7 @@ fun FullscreenPlaybackConsole(
                             }
 
                             // Synced Lyrics
-                            item {
+                            
                                 var editingLyrics by remember { mutableStateOf(false) }
                                 var lyricsInputText by remember { mutableStateOf("") }
                                 LaunchedEffect(rawLyricsText) {
@@ -6098,7 +6098,7 @@ fun FullscreenPlaybackConsole(
                             }
 
                             // Active Queue
-                            item {
+                            
                                 Column {
                                     Text("CURRENT AUDIENCE QUEUE", color = textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -6142,7 +6142,7 @@ fun FullscreenPlaybackConsole(
                             }
 
                             // Infrastructure information cards
-                            item {
+                            
                                 Divider(color = textPrimary.copy(alpha = 0.08f), modifier = Modifier.padding(top = 8.dp))
                                 Column(modifier = Modifier.fillMaxWidth()) {
                                     Text("SONG INFORMATION", color = themeAccentColor, fontWeight = FontWeight.Bold, fontSize = 13.sp, letterSpacing = (-0.3).sp)
@@ -6240,7 +6240,7 @@ fun FullscreenPlaybackConsole(
                             }
 
                             // Delete Action
-                            item {
+                            
                                 Column(modifier = Modifier.padding(bottom = 24.dp)) {
                                     Text("DELETE SONG", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                     Spacer(modifier = Modifier.height(6.dp))
@@ -6387,13 +6387,12 @@ fun AdvancedOptionsSheet(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(bottom = 24.dp)
+                    Column(
+                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         // Pin Track setting option item
-                        item {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text("PIN SONG TO HOME", color = textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -6431,7 +6430,7 @@ fun AdvancedOptionsSheet(
                         }
 
                         // Synced Lyrics
-                        item {
+                        
                             var editingLyrics by remember { mutableStateOf(false) }
                             var lyricsInputText by remember { mutableStateOf("") }
                             LaunchedEffect(rawLyricsText) {
@@ -6574,7 +6573,7 @@ fun AdvancedOptionsSheet(
                         }
 
                         // Active Queue
-                        item {
+                        
                             Column {
                                 Text("PLAYING QUEUE", color = textPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -6626,7 +6625,7 @@ fun AdvancedOptionsSheet(
                         }
 
                         // Infrastructure information cards
-                        item {
+                        
                             Divider(color = textPrimary.copy(alpha = 0.08f), modifier = Modifier.padding(top = 8.dp))
                             Column(modifier = Modifier.fillMaxWidth()) {
                                 Text("SONG INFORMATION", color = themeAccentColor, fontWeight = FontWeight.Bold, fontSize = 13.sp, letterSpacing = (-0.3).sp)
@@ -6724,7 +6723,7 @@ fun AdvancedOptionsSheet(
                         }
 
                         // Delete Action
-                        item {
+                        
                             Column(modifier = Modifier.padding(bottom = 24.dp)) {
                                 Text("DELETE SONG", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 11.sp)
                                 Spacer(modifier = Modifier.height(6.dp))
