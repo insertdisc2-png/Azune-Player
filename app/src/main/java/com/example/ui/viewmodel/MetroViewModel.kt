@@ -123,6 +123,9 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
     private val _isRepeatState = MutableStateFlow(false)
     val isRepeatState: StateFlow<Boolean> = _isRepeatState.asStateFlow()
 
+    private val _uiEvent = MutableSharedFlow<String>()
+    val uiEvent = _uiEvent.asSharedFlow()
+
     private var tickerJob: Job? = null
 
     init {
@@ -491,7 +494,10 @@ class MetroViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addTrackToPlaylist(playlistId: Int, track: Track) {
         viewModelScope.launch {
-            repository.addTrackToPlaylist(playlistId, track)
+            val added = repository.addTrackToPlaylist(playlistId, track)
+            if (!added) {
+                _uiEvent.emit("This song is already in this playlist")
+            }
         }
     }
 

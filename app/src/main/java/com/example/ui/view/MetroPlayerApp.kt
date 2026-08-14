@@ -21,6 +21,8 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -91,6 +93,12 @@ fun MetroPlayerApp(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { message ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // State bindings
     val isSettingsLoaded by viewModel.isSettingsLoaded.collectAsState()
     val settings by viewModel.userSettings.collectAsState()
@@ -159,6 +167,21 @@ fun MetroPlayerApp(
     var isLyricsExpanded by remember { mutableStateOf(false) }
     var isTileEditMode by remember { mutableStateOf(false) }
 
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+
+    val pagerState = androidx.compose.foundation.pager.rememberPagerState(
+        initialPage = 0,
+        pageCount = { 6 }
+    )
+    LaunchedEffect(pagerState.currentPage) {
+        focusManager.clearFocus()
+        keyboardController?.hide()
+        if (selectedPlaylistIdDetail == null) {
+            activePivotIndex = pagerState.currentPage
+        }
+    }
+
     // Resolve system dark/light theme options (Follow System)
     val isLight = when (settings.themeMode) {
         "light" -> true
@@ -220,6 +243,7 @@ fun MetroPlayerApp(
 
     // Search query states
     var searchMusicQuery by remember { mutableStateOf("") }
+    var searchArtistQuery by remember { mutableStateOf("") }
     var filterCategory by remember { mutableStateOf("all") } // "all", "favorites"
 
     // Permission states
@@ -321,7 +345,15 @@ fun MetroPlayerApp(
             transparency = settings.backgroundTransparency,
             bgStyle = settings.backgroundStyle,
             themeMode = settings.themeMode,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(
+                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    indication = null
+                ) {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                }
         ) {
             val isPlayerFullyVisible = playerTransition.currentState && playerTransition.targetState
             Scaffold(
@@ -334,6 +366,13 @@ fun MetroPlayerApp(
                     .windowInsetsPadding(WindowInsets.safeDrawing)
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp)
+                    .clickable(
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                    }
             ) {
                 // Header standard Zune/WP layout
                 Spacer(modifier = Modifier.height(16.dp))
@@ -348,21 +387,26 @@ fun MetroPlayerApp(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
                     ) {
                         listOf("Hub", "My Music", "Playlists", "Artists", "Albums", "Settings").forEachIndexed { index, label ->
-                            val isActive = activePivotIndex == index && selectedPlaylistIdDetail == null
+                            val isTabActive = activePivotIndex == index && selectedPlaylistIdDetail == null
                             Tab(
-                                selected = isActive,
+                                selected = isTabActive,
                                 onClick = {
+                                    focusManager.clearFocus()
+                                    keyboardController?.hide()
                                     selectedPlaylistIdDetail = null
                                     activePivotIndex = index
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(index)
+                                    }
                                 },
                                 modifier = Modifier.padding(horizontal = 4.dp)
                             ) {
                                 Text(
                                     text = label,
-                                    color = if (isActive) (if (isLight) Color.Black else Color.White) else (if (isLight) Color.Black.copy(alpha = 0.4f) else Color.White.copy(alpha = 0.4f)),
+                                    color = if (isTabActive) (if (isLight) Color.Black else Color.White) else (if (isLight) Color.Black.copy(alpha = 0.4f) else Color.White.copy(alpha = 0.4f)),
                                     fontFamily = getMetroFontFamily(settings.fontFamily),
-                                    fontWeight = if (isActive) FontWeight.Light else FontWeight.ExtraLight,
-                                    fontSize = if (isActive) 34.sp else 24.sp,
+                                    fontWeight = if (isTabActive) FontWeight.Light else FontWeight.ExtraLight,
+                                    fontSize = if (isTabActive) 34.sp else 24.sp,
                                     letterSpacing = (-1).sp,
                                     maxLines = 1,
                                     softWrap = false
@@ -378,9 +422,9 @@ fun MetroPlayerApp(
                 Box(modifier = Modifier.weight(1f)) {
                     // Slide transition animation for panels
                     AnimatedContent(
-                        targetState = if (selectedPlaylistIdDetail != null) 99 else activePivotIndex,
+                        targetState = selectedPlaylistIdDetail != null,
                         transitionSpec = {
-                            if (targetState > initialState) {
+                            if (targetState) {
                                 (slideInHorizontally { width -> width } + fadeIn()).togetherWith(
                                     slideOutHorizontally { width -> -width } + fadeOut()
                                 )
@@ -391,8 +435,49 @@ fun MetroPlayerApp(
                             }
                         },
                         label = "pivot_flow"
-                    ) { index ->
-                        when (index) {
+                    ) { targetIsDetail ->
+                        if (targetIsDetail) {
+                            // SUBVIEW: Playlist Detail view
+                            val selectedId = selectedPlaylistIdDetail
+                            val activePlaylist = playlists.find { it.id == selectedId }
+                            val playlistTracks by viewModel.currentPlaylistTracks.collectAsState()
+
+                            if (activePlaylist != null) {
+                                PlaylistDetailView(
+                                    playlistName = activePlaylist.name,
+                                    playlistDesc = activePlaylist.description,
+                                    playlistTracks = playlistTracks,
+                                    currentTrack = currentTrack,
+                                    settings = settings,
+                                    onBackClick = {
+                                        selectedPlaylistIdDetail = null
+                                        viewModel.selectPlaylist(null)
+                                    },
+                                    onPlayTrack = { track ->
+                                        viewModel.playTrack(track, playlistTracks)
+                                    },
+                                    onToggleFavorite = { trackId ->
+                                        viewModel.toggleFavorite(trackId)
+                                    },
+                                    isFavorite = { trackId ->
+                                        favTrackIdsSet.contains(trackId)
+                                    },
+                                    onRemoveTrack = { trackId ->
+                                        viewModel.removeTrackFromPlaylist(activePlaylist.id, trackId)
+                                    },
+                                    allSongsList = allSongs,
+                                    onAddSongToPlaylist = { track ->
+                                        viewModel.addTrackToPlaylist(activePlaylist.id, track)
+                                    }
+                                )
+                            }
+                        } else {
+                            androidx.compose.foundation.pager.HorizontalPager(
+                                state = pagerState,
+                                modifier = Modifier.fillMaxSize(),
+                                verticalAlignment = Alignment.Top
+                            ) { page ->
+                                when (page) {
                             0 -> {
                                 // Pivot HUB (Live Tiles Screen)
                                 val favoritesCount = remember(allSongs, settings.favoriteTrackIds) {
@@ -498,6 +583,8 @@ fun MetroPlayerApp(
                                 ArtistsPanel(
                                     allSongs = allSongs,
                                     settings = settings,
+                                    query = searchArtistQuery,
+                                    onQueryChange = { searchArtistQuery = it },
                                     onTrackPlay = { track, customQueue ->
                                         viewModel.playTrack(track, customQueue)
                                     }
@@ -545,44 +632,10 @@ fun MetroPlayerApp(
                                     onReRunOnboarding = { viewModel.setWelcomeCompleted(false) }
                                 )
                             }
-                            99 -> {
-                                // SUBVIEW: Playlist Detail view
-                                val selectedId = selectedPlaylistIdDetail
-                                val activePlaylist = playlists.find { it.id == selectedId }
-                                val playlistTracks by viewModel.currentPlaylistTracks.collectAsState()
-
-                                if (activePlaylist != null) {
-                                    PlaylistDetailView(
-                                        playlistName = activePlaylist.name,
-                                        playlistDesc = activePlaylist.description,
-                                        playlistTracks = playlistTracks,
-                                        currentTrack = currentTrack,
-                                        settings = settings,
-                                        onBackClick = {
-                                            selectedPlaylistIdDetail = null
-                                            viewModel.selectPlaylist(null)
-                                        },
-                                        onPlayTrack = { track ->
-                                            viewModel.playTrack(track, playlistTracks)
-                                        },
-                                        onToggleFavorite = { trackId ->
-                                            viewModel.toggleFavorite(trackId)
-                                        },
-                                        isFavorite = { trackId ->
-                                            favTrackIdsSet.contains(trackId)
-                                        },
-                                        onRemoveTrack = { trackId ->
-                                            viewModel.removeTrackFromPlaylist(activePlaylist.id, trackId)
-                                        },
-                                        allSongsList = allSongs,
-                                        onAddSongToPlaylist = { track ->
-                                            viewModel.addTrackToPlaylist(activePlaylist.id, track)
-                                        }
-                                    )
-                                }
-                            }
                         }
                     }
+                }
+                }
                 }
 
                 // Mini Media Controls strip at coordinates bottom
@@ -916,7 +969,19 @@ fun MainTilesHub(
 
     val pinnedTracks = remember(settings.pinnedTrackIds, allSongs) {
         val pinnedIds = settings.pinnedTrackIds.split(",").filter { it.isNotEmpty() }.toSet()
-        allSongs.filter { it.id in pinnedIds }.take(5)
+        allSongs.filter { it.id in pinnedIds }
+    }
+
+    val consumeScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: androidx.compose.ui.geometry.Offset,
+                available: androidx.compose.ui.geometry.Offset,
+                source: androidx.compose.ui.input.nestedscroll.NestedScrollSource
+            ): androidx.compose.ui.geometry.Offset {
+                return available
+            }
+        }
     }
 
     val tileSpans = remember(settings.tileSpans) {
@@ -1638,14 +1703,15 @@ fun MainTilesHub(
                                                     )
                                                 }
                                             } else {
-                                                Column(
+                                                LazyColumn(
                                                     modifier = Modifier
                                                         .weight(1f)
                                                         .fillMaxWidth()
-                                                        .padding(vertical = 8.dp),
+                                                        .padding(vertical = 8.dp)
+                                                        .nestedScroll(consumeScrollConnection),
                                                     verticalArrangement = Arrangement.spacedBy(6.dp)
                                                 ) {
-                                                    pinnedTracks.take(4).forEach { track ->
+                                                    items(pinnedTracks, key = { it.id }) { track ->
                                                         val isCurrentPlay = currentTrack?.id == track.id
                                                         Column(
                                                             modifier = Modifier
@@ -1739,11 +1805,11 @@ fun MainTilesHub(
                                                     }
                                                 }
                                             } else {
-                                                Column(
-                                                    modifier = Modifier.fillMaxWidth(),
+                                                LazyColumn(
+                                                    modifier = Modifier.fillMaxWidth().weight(1f).nestedScroll(consumeScrollConnection),
                                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                                 ) {
-                                                    pinnedTracks.take(2).forEach { track ->
+                                                    items(pinnedTracks, key = { it.id }) { track ->
                                                         val isCurrentPlay = currentTrack?.id == track.id
                                                         Row(
                                                             modifier = Modifier
@@ -1935,12 +2001,15 @@ fun MyMusicLibPanel(
     var isAscending by androidx.compose.runtime.remember(settings.musicSortAscending) { androidx.compose.runtime.mutableStateOf(settings.musicSortAscending) }
     var isSortMenuExpanded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
-    val dynamicGenres = androidx.compose.runtime.remember(allSongs) {
-        allSongs
-            .map { it.genre.trim() }
-            .filter { it.isNotEmpty() && !it.equals("Unknown", ignoreCase = true) && !it.equals("Ambient Synth", ignoreCase = true) }
-            .distinctBy { it.lowercase() }
-            .sorted()
+    var dynamicGenres by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(emptyList<String>()) }
+    androidx.compose.runtime.LaunchedEffect(allSongs) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            dynamicGenres = allSongs
+                .map { it.genre.trim() }
+                .filter { it.isNotEmpty() && !it.equals("Unknown", ignoreCase = true) && !it.equals("Ambient Synth", ignoreCase = true) }
+                .distinctBy { it.lowercase() }
+                .sorted()
+        }
     }
 
     // Filter and Sort tracks dynamically (Extremely optimized non-stuttering configuration!)
@@ -1982,6 +2051,7 @@ fun MyMusicLibPanel(
     }
 
     val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
     Column(
         modifier = Modifier
@@ -1989,7 +2059,10 @@ fun MyMusicLibPanel(
             .clickable(
                 interactionSource = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                 indication = null
-            ) { focusManager.clearFocus() }
+            ) {
+                focusManager.clearFocus()
+                keyboardController?.hide()
+            }
     ) {
         // Inline Search field
         MetroTextField(
@@ -1997,7 +2070,11 @@ fun MyMusicLibPanel(
             onValueChange = onQueryChange,
             placeholder = "Search title, artist, album...",
             leadingIcon = Icons.Default.Search,
-            onClear = { onQueryChange("") }
+            onClear = {
+                onQueryChange("")
+                focusManager.clearFocus()
+                keyboardController?.hide()
+            }
         )
 
         Spacer(modifier = Modifier.height(10.dp))
@@ -2357,14 +2434,18 @@ fun PlaylistsPanel(
 fun ArtistsPanel(
     allSongs: List<Track>,
     settings: com.example.data.database.UserSettingsEntity,
+    query: String,
+    onQueryChange: (String) -> Unit,
     onTrackPlay: (Track, List<Track>) -> Unit
 ) {
     val themeAccentColor = getThemeAccentColor(settings.accentColorHex)
     val textPrimaryColor = if (settings.themeMode == "light") Color.Black else Color.White
     val textSecondaryColor = if (settings.themeMode == "light") Color.Black.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f)
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
 
-    // Group songs by artist name, splitting on collaborative separators efficiently
-    val groupedByArtist = remember(allSongs, settings.artistSeparators) {
+    // Group songs by artist name, splitting on collaborative separators efficiently and synchronously
+    val groupedByArtist = remember(allSongs, settings.artistSeparators, query) {
         val separators = settings.artistSeparators.split(";")
             .map { it.trim() }
             .filter { it.isNotEmpty() }
@@ -2385,85 +2466,186 @@ fun ArtistsPanel(
                 }
             }
         }
-        map
+        
+        if (query.isNotBlank()) {
+            val filteredMap = java.util.TreeMap<String, MutableList<Track>>(String.CASE_INSENSITIVE_ORDER)
+            val cleanQuery = query.trim()
+            map.forEach { (artist, tracks) ->
+                if (artist.contains(cleanQuery, ignoreCase = true)) {
+                    filteredMap[artist] = tracks
+                } else {
+                    val matchingTracks = tracks.filter { it.title.contains(cleanQuery, ignoreCase = true) }
+                    if (matchingTracks.isNotEmpty()) {
+                        filteredMap[artist] = matchingTracks.toMutableList()
+                    }
+                }
+            }
+            filteredMap
+        } else {
+            map
+        }
     }
 
-    if (groupedByArtist.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "no artists indexed yet.",
-                color = textSecondaryColor,
-                fontFamily = getMetroFontFamily(settings.fontFamily),
-                fontSize = 14.sp
-            )
-        }
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp)
-        ) {
-            groupedByArtist.forEach { (artistName, songs) ->
-                item(key = "artist_hdr_$artistName", contentType = "artist_header") {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp, bottom = 4.dp, start = 4.dp, end = 4.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null
+            ) {
+                focusManager.clearFocus()
+                keyboardController?.hide()
+            }
+    ) {
+        // Search bar
+        OutlinedTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+            placeholder = { 
+                Text(
+                    text = "search artists...", 
+                    fontFamily = getMetroFontFamily(settings.fontFamily),
+                    color = textSecondaryColor 
+                ) 
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = null,
+                    tint = textSecondaryColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    IconButton(
+                        onClick = {
+                            onQueryChange("")
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                        }
                     ) {
-                        Text(
-                            text = artistName.lowercase(),
-                            color = if (settings.themeMode == "light") Color.Black else themeAccentColor,
-                            fontFamily = getMetroFontFamily(settings.fontFamily),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp,
-                            letterSpacing = (-0.5).sp
-                        )
-                        Text(
-                            text = "${songs.size} " + if (songs.size > 1) "tracks" else "track",
-                            color = textSecondaryColor,
-                            fontSize = 11.sp
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Clear search",
+                            tint = textSecondaryColor,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
-                items(
-                    items = songs,
-                    key = { song -> "artist_${artistName}_${song.id}" },
-                    contentType = { "artist_song" }
-                ) { song ->
-                    val playAction = remember(song.id, songs) { { onTrackPlay(song, songs) } }
-                    Row(
+            },
+            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                imeAction = androidx.compose.ui.text.input.ImeAction.Search
+            ),
+            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                onSearch = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                }
+            ),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                focusedIndicatorColor = themeAccentColor,
+                unfocusedIndicatorColor = textSecondaryColor.copy(alpha = 0.5f),
+                cursorColor = themeAccentColor
+            ),
+            singleLine = true
+        )
+        
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(bottom = 16.dp)
+        ) {
+            if (groupedByArtist.isEmpty()) {
+                item(key = "empty_artists_state") {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(onClick = playAction)
-                            .padding(vertical = 8.dp, horizontal = 12.dp)
-                            .background(Color.White.copy(alpha = 0.02f)),
-                        verticalAlignment = Alignment.CenterVertically
+                            .height(260.dp)
+                            .clickable(
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                focusManager.clearFocus()
+                                keyboardController?.hide()
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.MusicNote,
-                            contentDescription = null,
-                            tint = textSecondaryColor,
-                            modifier = Modifier.size(16.dp)
+                        Text(
+                            text = if (query.isNotBlank()) "no matching artists found." else "no artists indexed yet.",
+                            color = textSecondaryColor,
+                            fontFamily = getMetroFontFamily(settings.fontFamily),
+                            fontSize = 14.sp
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
+                    }
+                }
+            } else {
+                groupedByArtist.forEach { (artistName, songs) ->
+                    item(key = "artist_hdr_$artistName", contentType = "artist_header") {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp, bottom = 4.dp, start = 4.dp, end = 4.dp)
+                        ) {
                             Text(
-                                text = song.title,
-                                color = textPrimaryColor,
-                                fontSize = 14.sp
+                                text = artistName.lowercase(),
+                                color = if (settings.themeMode == "light") Color.Black else themeAccentColor,
+                                fontFamily = getMetroFontFamily(settings.fontFamily),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 24.sp,
+                                letterSpacing = (-0.5).sp
                             )
                             Text(
-                                text = if (song.album.isNotEmpty()) song.album.lowercase() else "unknown album",
+                                text = "${songs.size} " + if (songs.size > 1) "tracks" else "track",
                                 color = textSecondaryColor,
                                 fontSize = 11.sp
                             )
                         }
                     }
-                }
-                item(key = "artist_div_$artistName", contentType = "divider") {
-                    Divider(color = textPrimaryColor.copy(alpha = 0.08f), modifier = Modifier.padding(top = 8.dp))
+                    itemsIndexed(
+                        items = songs,
+                        key = { index, song -> "artist_${artistName}_${song.id}_$index" },
+                        contentType = { _, _ -> "artist_song" }
+                    ) { _, song ->
+                        val playAction = remember(song.id, songs) { { onTrackPlay(song, songs) } }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(onClick = playAction)
+                                .padding(vertical = 8.dp, horizontal = 12.dp)
+                                .background(Color.White.copy(alpha = 0.02f)),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MusicNote,
+                                contentDescription = null,
+                                tint = textSecondaryColor,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = song.title,
+                                    color = textPrimaryColor,
+                                    fontSize = 14.sp
+                                )
+                                Text(
+                                    text = if (song.album.isNotEmpty()) song.album.lowercase() else "unknown album",
+                                    color = textSecondaryColor,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                    }
+                    item(key = "artist_div_$artistName", contentType = "divider") {
+                        HorizontalDivider(color = textPrimaryColor.copy(alpha = 0.08f), modifier = Modifier.padding(top = 8.dp))
+                    }
                 }
             }
         }
@@ -2483,26 +2665,30 @@ fun AlbumsPanel(
 
     // Group songs by album name
     val groupedByAlbum = remember(allSongs) {
-        allSongs.groupBy { it.album.ifEmpty { "Unknown Album" } }.toSortedMap()
+        allSongs.groupBy { it.album.ifEmpty { "Unknown Album" } }.toSortedMap(String.CASE_INSENSITIVE_ORDER)
     }
 
-    if (groupedByAlbum.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "no albums indexed yet.",
-                color = textSecondaryColor,
-                fontFamily = getMetroFontFamily(settings.fontFamily),
-                fontSize = 14.sp
-            )
-        }
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp)
-        ) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
+        if (groupedByAlbum.isEmpty()) {
+            item(key = "empty_albums_state") {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(260.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "no albums indexed yet.",
+                        color = textSecondaryColor,
+                        fontFamily = getMetroFontFamily(settings.fontFamily),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        } else {
             groupedByAlbum.forEach { (albumName, songs) ->
                 val albumArtist = songs.firstOrNull()?.artist ?: "Unknown Artist"
                 item(key = "album_hdr_$albumName", contentType = "album_header") {
@@ -2566,11 +2752,11 @@ fun AlbumsPanel(
                         }
                     }
                 }
-                items(
+                itemsIndexed(
                     items = songs,
-                    key = { song -> "album_${albumName}_${song.id}" },
-                    contentType = { "album_song" }
-                ) { song ->
+                    key = { index, song -> "album_${albumName}_${song.id}_$index" },
+                    contentType = { _, _ -> "album_song" }
+                ) { _, song ->
                     val playAction = remember(song.id, songs) { { onTrackPlay(song, songs) } }
                     Row(
                         modifier = Modifier
@@ -2596,7 +2782,7 @@ fun AlbumsPanel(
                     }
                 }
                 item(key = "album_div_$albumName", contentType = "divider") {
-                    Divider(color = textPrimaryColor.copy(alpha = 0.08f), modifier = Modifier.padding(top = 8.dp))
+                    HorizontalDivider(color = textPrimaryColor.copy(alpha = 0.08f), modifier = Modifier.padding(top = 8.dp))
                 }
             }
         }
@@ -4737,7 +4923,7 @@ fun PlaylistDetailView(
             }
         } else {
             LazyColumn(modifier = Modifier.weight(1f)) {
-                items(items = playlistTracks, key = { it.id }) { track ->
+                items(items = playlistTracks) { track ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

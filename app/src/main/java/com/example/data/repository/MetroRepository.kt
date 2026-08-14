@@ -200,7 +200,10 @@ class MetroRepository(
         playlistTrackDao.clearPlaylistTracks(id)
     }
 
-    suspend fun addTrackToPlaylist(playlistId: Int, track: Track) {
+    suspend fun addTrackToPlaylist(playlistId: Int, track: Track): Boolean {
+        val count = playlistTrackDao.checkTrackInPlaylist(playlistId, track.id)
+        if (count > 0) return false
+
         val entity = PlaylistTrackEntity(
             playlistId = playlistId,
             trackId = track.id,
@@ -212,6 +215,7 @@ class MetroRepository(
             synthType = track.synthType
         )
         playlistTrackDao.insertTrack(entity)
+        return true
     }
 
     suspend fun removeTrackFromPlaylist(playlistId: Int, trackId: String) {

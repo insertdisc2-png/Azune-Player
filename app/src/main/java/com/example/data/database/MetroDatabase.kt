@@ -92,6 +92,9 @@ interface PlaylistTrackDao {
     @Query("SELECT * FROM playlist_tracks WHERE playlistId = :playlistId ORDER BY id ASC")
     fun getTracksForPlaylistFlow(playlistId: Int): Flow<List<PlaylistTrackEntity>>
 
+    @Query("SELECT COUNT(*) FROM playlist_tracks WHERE playlistId = :playlistId AND trackId = :trackId")
+    suspend fun checkTrackInPlaylist(playlistId: Int, trackId: String): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTrack(track: PlaylistTrackEntity)
 
