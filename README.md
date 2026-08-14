@@ -16,6 +16,12 @@ The first (or maybe) offline music player fully created by AI. Supports the most
   <img width="200" alt="Screenshot_20260814_171657" src="https://github.com/user-attachments/assets/c7465055-9332-4383-82f4-abcdb0bd4ff4" />
 </p>
 
+<p align="center">
+  <img width="200" alt="Screenshot_20260814_171714" src="https://github.com/user-attachments/assets/6bb7ba73-c93d-46bf-8842-668957450ef5" />
+  <img width="200" alt="Screenshot_20260814_171710" src="https://github.com/user-attachments/assets/75a36e44-c1ac-4e8f-9353-7b44384beb75" />
+  <img width="200" alt="Screenshot_20260814_171707" src="https://github.com/user-attachments/assets/0fe05430-616c-488c-a3f0-2f28bea5169c" />
+</p>
+
 ## Privacy
 This app does not collect any user data. It runs fully offline with no data transfer. The only information collected is basic device data (phone manufacturer, Android version, etc.) in the event of a crash.
 
