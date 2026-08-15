@@ -7,6 +7,9 @@ The first (or maybe) offline music player fully created by AI. Supports the most
 - Supports MP3, WAV, FLAC, and other common audio formats
 - Modern, clean interface
 
+## Navigate
+- Navigate using the top tab text. Scroll it horizontally to reveal more tab.
+
 ## Screenshots
 
 <p align="center">
